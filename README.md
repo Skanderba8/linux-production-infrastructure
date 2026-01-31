@@ -1,40 +1,238 @@
-# Phase 1: Baseline Configuration - Progress Summary
+# Phase 1 COMPLETE - Infrastructure Summary
 
-## Project: Linux Infrastructure with Automation & Security
+## 🎉 Congratulations! Phase 1 is 100% Complete!
 
----
-
-## What We've Accomplished
-
-### ✅ Step 1.1: VirtualBox Environment Setup
-**Completed:**
-- Cleaned up old VMs
-- Created NAT Network: `InfraNet` (10.0.2.0/24)
-- Downloaded Linux Mint 22 ISO
-- Created VM: `baseline-template`
-  - 2GB RAM, 2 CPUs, 25GB disk
-  - Connected to InfraNet (Adapter 1)
-  - Host-Only Network (Adapter 2) for SSH access from Windows
-
-**Network Configuration:**
-- **Adapter 1 (NAT Network)**: `10.0.2.10/24` - For internet & VM-to-VM communication
-- **Adapter 2 (Host-Only)**: `192.168.56.10/24` - For SSH from Windows host
+You now have a fully functional, secured, multi-VM Linux infrastructure ready for automation.
 
 ---
 
-### ✅ Step 1.2: Manual Base Configuration
+## Infrastructure Overview
 
-#### 1.2a-d: Initial Setup
-**What we did:**
-- Installed Linux Mint 22 via unattended installation
-- User created: `sysadmin` with sudo access
-- Hostname set to: `baseline-template`
-- Configured static IP addresses on both network adapters
-- Updated system packages
+### Virtual Machines (5 Total)
 
-**Commands used:**
+| VM Name | Role | NAT Network IP | Host-Only IP | Status |
+|---------|------|----------------|--------------|--------|
+| baseline-template | Template (DO NOT USE) | 10.0.2.10 | 192.168.56.10 | Powered Off |
+| control-node | Ansible Control Server | 10.0.2.11 | 192.168.56.11 | ✅ Running |
+| web-server | Nginx Reverse Proxy | 10.0.2.12 | 192.168.56.12 | ✅ Running |
+| app-server | Application/API Server | 10.0.2.13 | 192.168.56.13 | ✅ Running |
+| db-server | Database Server | 10.0.2.14 | 192.168.56.14 | ✅ Running |
+
+### Network Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Windows Host Machine                      │
+│                   (192.168.56.1 - Host-Only)                 │
+└────────────────────────────┬────────────────────────────────┘
+                             │ SSH Access
+                             │ (Host-Only Network)
+        ┌────────────────────┼────────────────────┐
+        │                    │                    │
+   ┌────▼─────┐       ┌──────▼──────┐      ┌─────▼──────┐
+   │ control  │       │ web-server  │      │ app-server │
+   │  -node   │       │             │      │            │
+   │.56.11    │       │  .56.12     │      │  .56.13    │
+   └────┬─────┘       └──────┬──────┘      └─────┬──────┘
+        │                    │                    │
+        └────────────────────┼────────────────────┘
+                             │
+                        ┌────▼──────┐
+                        │ db-server │
+                        │           │
+                        │  .56.14   │
+                        └───────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│              NAT Network (InfraNet - 10.0.2.0/24)            │
+│  All VMs can communicate with each other and the Internet   │
+│                                                              │
+│  control-node: 10.0.2.11    web-server:  10.0.2.12         │
+│  app-server:   10.0.2.13    db-server:   10.0.2.14         │
+└──────────────────────────────────────────────────────────────┘
+                             │
+                        ┌────▼─────┐
+                        │ Internet │
+                        └──────────┘
+```
+
+---
+
+## Security Configuration (Applied to All VMs)
+
+### ✅ SSH Hardening
+- **Authentication**: SSH keys only (password auth disabled)
+- **Root Login**: Disabled
+- **Port**: 22 (standard)
+- **Max Auth Tries**: 3
+- **Public Key**: Configured for `sysadmin` user
+
+### ✅ Firewall (UFW)
+- **Status**: Active and enabled on boot
+- **Default Policy**: Deny incoming, Allow outgoing
+- **Allowed Ports**:
+  - 22/tcp (SSH) - from anywhere
+  - 9100/tcp (node_exporter) - from 10.0.2.0/24 only
+
+### ✅ Intrusion Prevention (fail2ban)
+- **Monitoring**: SSH login attempts
+- **Max Retries**: 3 failed attempts
+- **Ban Time**: 3600 seconds (1 hour)
+- **Find Time**: 600 seconds (10 minutes)
+
+### ✅ Automatic Security Updates
+- **Service**: unattended-upgrades
+- **Enabled**: Security updates only
+- **Auto-reboot**: Disabled (manual control)
+- **Old Kernel Cleanup**: Enabled
+
+### ✅ Monitoring
+- **Agent**: node_exporter v1.8.2
+- **Port**: 9100
+- **Metrics**: CPU, RAM, Disk, Network, System stats
+- **Auto-start**: Enabled
+
+---
+
+## Quick Access Guide
+
+### SSH Access from Windows
+
+```powershell
+# SSH to each VM using Host-Only network
+ssh sysadmin@192.168.56.11  # control-node
+ssh sysadmin@192.168.56.12  # web-server
+ssh sysadmin@192.168.56.13  # app-server
+ssh sysadmin@192.168.56.14  # db-server
+```
+
+### VM-to-VM Communication
+
+All VMs can reach each other by hostname via the NAT Network (10.0.2.x):
+
 ```bash
-# Set static IP on NAT Network adapter (enp0s3)
+# From any VM, you can:
+ping web-server      # Resolves to 10.0.2.12
+ping app-server      # Resolves to 10.0.2.13
+ping db-server       # Resolves to 10.0.2.14
+ping control-node    # Resolves to 10.0.2.11
+
+# Or SSH between VMs
+ssh sysadmin@web-server
+ssh sysadmin@app-server
+# etc.
+```
+
+### /etc/hosts Configuration (All VMs)
+
+```
+127.0.0.1       localhost
+127.0.1.1       [hostname]
+
+# Infrastructure VMs
+10.0.2.11       control-node
+10.0.2.12       web-server
+10.0.2.13       app-server
+10.0.2.14       db-server
+```
+
+---
+
+## Services Running on Each VM
+
+| Service | Port | Purpose | Status |
+|---------|------|---------|--------|
+| SSH | 22 | Remote access | ✅ Running |
+| UFW | - | Firewall | ✅ Active |
+| fail2ban | - | Intrusion prevention | ✅ Running |
+| unattended-upgrades | - | Auto security updates | ✅ Running |
+| node_exporter | 9100 | Metrics collection | ✅ Running |
+
+---
+
+## Verification Commands
+
+### Check System Status on Any VM
+
+```bash
+# System info
+hostname
+whoami
+uptime
+
+# Network configuration
+ip addr show
+ip route show
+
+# Security services
+sudo systemctl status ssh
+sudo systemctl status fail2ban
+sudo ufw status verbose
+
+# Monitoring
+sudo systemctl status node_exporter
+curl http://localhost:9100/metrics | head -20
+
+# Check for updates
+sudo apt update
+sudo apt list --upgradable
+```
+
+### Test Connectivity Between VMs
+
+```bash
+# From control-node, test all VMs
+ping -c 2 web-server
+ping -c 2 app-server
+ping -c 2 db-server
+
+# Test internet access
+ping -c 2 google.com
+
+# Test SSH to other VMs
+ssh sysadmin@web-server "hostname"
+ssh sysadmin@app-server "hostname"
+ssh sysadmin@db-server "hostname"
+```
+
+---
+
+## Configuration Files Reference
+
+### Important Files Modified
+
+| File Path | Purpose |
+|-----------|---------|
+| `/etc/ssh/sshd_config` | SSH server configuration |
+| `/etc/ssh/sshd_config.backup` | Original SSH config backup |
+| `/etc/fail2ban/jail.local` | fail2ban configuration |
+| `/etc/apt/apt.conf.d/50unattended-upgrades` | Auto-update settings |
+| `/etc/hosts` | Hostname to IP resolution |
+| `/etc/systemd/system/node_exporter.service` | node_exporter service |
+| `~/.ssh/authorized_keys` | SSH public keys |
+
+### Log Files to Monitor
+
+| Log File | Purpose |
+|----------|---------|
+| `/var/log/auth.log` | SSH authentication attempts |
+| `/var/log/fail2ban.log` | fail2ban actions and bans |
+| `/var/log/ufw.log` | Firewall events |
+| `/var/log/unattended-upgrades/` | Auto-update logs |
+| `/var/log/syslog` | General system logs |
+
+---
+
+## Complete Command Reference
+
+### Phase 1 - Step by Step Commands
+
+<details>
+<summary>Click to expand full command history</summary>
+
+#### Initial Setup (baseline-template)
+```bash
+# Set static IP on NAT Network
 sudo nmcli connection modify "Wired connection 1" \
   ipv4.addresses 10.0.2.10/24 \
   ipv4.gateway 10.0.2.1 \
@@ -43,409 +241,295 @@ sudo nmcli connection modify "Wired connection 1" \
 sudo nmcli connection down "Wired connection 1"
 sudo nmcli connection up "Wired connection 1"
 
-# Set static IP on Host-Only adapter (enp0s8)
+# Set static IP on Host-Only
 sudo nmcli connection add type ethernet ifname enp0s8 con-name host-only \
   ipv4.addresses 192.168.56.10/24 \
   ipv4.method manual
 sudo nmcli connection up host-only
 
-# Change hostname
+# Set hostname
 sudo hostnamectl set-hostname baseline-template
-sudo nano /etc/hosts  # Changed 127.0.1.1 line to baseline-template
+sudo nano /etc/hosts  # Change to baseline-template
 
 # Update system
-sudo apt update
-sudo apt upgrade -y
+sudo apt update && sudo apt upgrade -y
 sudo apt install -y vim curl wget git net-tools ufw fail2ban openssh-server
 sudo reboot
 ```
 
-**Verification:**
-```bash
-hostname                    # Shows: baseline-template
-ip addr show enp0s3         # Shows: 10.0.2.10/24
-ip addr show enp0s8         # Shows: 192.168.56.10/24
-```
-
----
-
-#### 1.2e: SSH Setup
-**What we did:**
-- Installed OpenSSH server on VM
-- Generated SSH key pair on Windows host
-- Configured key-based authentication
-- Successfully established SSH connection from Windows to VM
-
-**Commands used:**
-
-**On Windows (PowerShell):**
-```powershell
-# Generate SSH key pair
-ssh-keygen -t ed25519 -C "sysadmin@infrastructure-project"
-# Location: C:\Users\YourName\.ssh\id_ed25519
-
-# View public key
-type $env:USERPROFILE\.ssh\id_ed25519.pub
-
-# SSH to VM
-ssh sysadmin@192.168.56.10
-```
-
-**On VM:**
+#### SSH Configuration
 ```bash
 # Install SSH server
 sudo apt install -y openssh-server
 sudo systemctl enable ssh
 sudo systemctl start ssh
 
-# Add public key
+# Configure SSH keys
 mkdir -p ~/.ssh
 chmod 700 ~/.ssh
-nano ~/.ssh/authorized_keys  # Paste public key here
+nano ~/.ssh/authorized_keys  # Paste public key
 chmod 600 ~/.ssh/authorized_keys
-```
 
-**Result:** ✅ Can SSH from Windows to VM at `192.168.56.10`
-
----
-
-#### 1.2f: SSH Hardening
-**What we did:**
-- Disabled root login via SSH
-- Disabled password authentication (SSH keys only)
-- Limited authentication attempts
-- Disabled unnecessary features
-
-**Commands used:**
-```bash
-# Backup original config
+# Harden SSH
 sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup
-
-# Edit SSH config
 sudo nano /etc/ssh/sshd_config
-```
-
-**Changes made to `/etc/ssh/sshd_config`:**
-```
-PermitRootLogin no
-PasswordAuthentication no
-PubkeyAuthentication yes
-PermitEmptyPasswords no
-MaxAuthTries 3
-X11Forwarding no
-```
-
-```bash
-# Test and restart
+# Set: PermitRootLogin no, PasswordAuthentication no, etc.
 sudo sshd -t
 sudo systemctl restart ssh
 ```
 
-**Result:** ✅ SSH is hardened - only key-based authentication allowed, no root login
-
----
-
-#### 1.2g: Firewall Configuration
-**What we did:**
-- Enabled UFW (Uncomplicated Firewall)
-- Set default deny on incoming traffic
-- Allowed SSH traffic
-- Verified firewall is active
-
-**Commands used:**
+#### Firewall Configuration
 ```bash
-# Set default policies
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
-
-# Allow SSH
 sudo ufw allow 22/tcp
-
-# Enable firewall
 sudo ufw enable
-
-# Check status
 sudo ufw status verbose
 ```
 
-**Current firewall rules:**
-```
-Status: active
-Default: deny (incoming), allow (outgoing)
-
-To                         Action      From
---                         ------      ----
-22/tcp                     ALLOW IN    Anywhere
-2222/tcp                   ALLOW IN    Anywhere
-```
-
-**Result:** ✅ Firewall active and protecting the system
-
----
-
-#### 1.2h: Fail2ban Installation
-**What we did:**
-- Installed fail2ban for intrusion prevention
-- Configured to monitor SSH login attempts
-- Set to ban IPs after 3 failed attempts for 1 hour
-
-**Commands used:**
+#### fail2ban Setup
 ```bash
-# Install fail2ban
 sudo apt install -y fail2ban
-
-# Create local config
 sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
-
-# Edit config
-sudo nano /etc/fail2ban/jail.local
-```
-
-**Configuration for `[sshd]` jail:**
-```ini
-[sshd]
-enabled = true
-port = ssh
-maxretry = 3
-bantime = 3600
-findtime = 600
-```
-
-```bash
-# Enable and start
+sudo nano /etc/fail2ban/jail.local  # Configure [sshd] section
 sudo systemctl enable fail2ban
 sudo systemctl start fail2ban
-
-# Check status
 sudo fail2ban-client status sshd
 ```
 
-**Result:** ✅ fail2ban monitoring SSH, ready to ban attackers
-
----
-
-#### 1.2i: Automatic Security Updates
-**What we did:**
-- Configured automatic installation of security updates
-- System will auto-update security patches without manual intervention
-
-**Commands used:**
+#### Automatic Updates
 ```bash
-# Install unattended-upgrades
 sudo apt install -y unattended-upgrades apt-listchanges
-
-# Enable automatic updates
-sudo dpkg-reconfigure -plow unattended-upgrades  # Selected "Yes"
-
-# Edit configuration
+sudo dpkg-reconfigure -plow unattended-upgrades
 sudo nano /etc/apt/apt.conf.d/50unattended-upgrades
-```
-
-**Key settings enabled:**
-- Automatic security updates: ✅
-- Remove unused dependencies: ✅
-- Remove old kernels: ✅
-- Automatic reboot: ❌ (manual control)
-
-```bash
-# Test configuration
-sudo unattended-upgrades --dry-run --debug
-
-# Enable service
 sudo systemctl enable unattended-upgrades
 sudo systemctl start unattended-upgrades
 ```
 
-**Result:** ✅ System will automatically install security updates
-
----
-
-## Current System State
-
-### Security Hardening Summary
-- ✅ SSH key-based authentication only (no passwords)
-- ✅ Root login disabled
-- ✅ Firewall enabled (UFW) - deny all except SSH
-- ✅ fail2ban monitoring for brute-force attempts
-- ✅ Automatic security updates enabled
-- ✅ Minimal attack surface
-
-### Network Configuration
-| Interface | IP Address | Purpose |
-|-----------|------------|---------|
-| enp0s3 | 10.0.2.10/24 | NAT Network - Internet & VM communication |
-| enp0s8 | 192.168.56.10/24 | Host-Only - SSH from Windows |
-
-### Services Running
-- ✅ SSH (port 22)
-- ✅ UFW Firewall
-- ✅ fail2ban
-- ✅ unattended-upgrades
-- ✅ node_exporter (port 9100)
-
----
-
-## Verification Commands
-
-Run these to verify the baseline configuration:
-
+#### node_exporter Installation
 ```bash
-# System info
-hostname
-whoami
-ip addr show
-
-# SSH status
-sudo systemctl status ssh
-sudo ss -tulpn | grep :22
-
-# Firewall status
-sudo ufw status verbose
-
-# fail2ban status
-sudo fail2ban-client status
-sudo fail2ban-client status sshd
-
-# Automatic updates
-sudo systemctl status unattended-upgrades
-
-# Check for updates
-sudo apt update
-sudo apt list --upgradable
-```
-
----
-
-## What's Next - Phase 1, Step 1.3
-
-### ✅ Baseline Configuration: COMPLETE
-All manual configuration is done! The baseline-template is hardened, monitored, and ready.
-
-### 🎯 Next Step: Clone and Configure VMs
-
-**Step 1.3a: Take Snapshot**
-- Install node_exporter for Prometheus metrics
-- Configure to start on boot
-- Test metrics endpoint
-
-#### 1.2j: Monitoring Agent Installation ✅ COMPLETED
-**What we did:**
-- Installed node_exporter v1.8.2
-- Created systemd service for node_exporter
-- Configured auto-start on boot
-- Exposed metrics on port 9100
-- Configured firewall to allow metrics access from NAT Network
-
-**Commands used:**
-```bash
-# Download and install
 cd /tmp
 wget https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz
 tar xvfz node_exporter-1.8.2.linux-amd64.tar.gz
 sudo mv node_exporter-1.8.2.linux-amd64/node_exporter /usr/local/bin/
-node_exporter --version
-
-# Create user
 sudo useradd --no-create-home --shell /bin/false node_exporter
 
-# Create systemd service file at /etc/systemd/system/node_exporter.service
-
-# Enable and start
+# Create systemd service
+sudo nano /etc/systemd/system/node_exporter.service
 sudo systemctl daemon-reload
 sudo systemctl start node_exporter
 sudo systemctl enable node_exporter
 
-# Allow firewall access from NAT Network
+# Firewall
 sudo ufw allow from 10.0.2.0/24 to any port 9100 proto tcp
-
-# Test
-curl http://localhost:9100/metrics
 ```
 
-**Result:** ✅ node_exporter running and exposing system metrics
+#### VM Cloning and Configuration
+```bash
+# For each cloned VM (control-node, web-server, app-server, db-server):
+
+# Example for control-node:
+sudo hostnamectl set-hostname control-node
+sudo sed -i 's/baseline-template/control-node/g' /etc/hosts
+sudo nmcli connection modify "Wired connection 1" ipv4.addresses 10.0.2.11/24
+sudo nmcli connection modify "host-only" ipv4.addresses 192.168.56.11/24
+sudo nmcli connection down "Wired connection 1" && sudo nmcli connection up "Wired connection 1"
+sudo nmcli connection down "host-only" && sudo nmcli connection up "host-only"
+sudo reboot
+
+# After reboot, add to /etc/hosts on all VMs:
+sudo nano /etc/hosts
+# Add:
+# 10.0.2.11    control-node
+# 10.0.2.12    web-server
+# 10.0.2.13    app-server
+# 10.0.2.14    db-server
+```
+
+</details>
 
 ---
 
-## ✅ PHASE 1 COMPLETE!
+## Phase 1 Achievements Summary
 
-The baseline-template VM is now fully configured with:
-- ✅ Security hardening (SSH, firewall, fail2ban)
-- ✅ Automatic updates
-- ✅ Monitoring agent (node_exporter)
-- ✅ All services configured to auto-start on boot
+### ✅ What You've Accomplished
 
-**This VM is ready to be cloned!**
+1. **Infrastructure Setup**
+   - Created 5 VMs with proper networking
+   - Configured dual network adapters (NAT + Host-Only)
+   - Established VM-to-VM and host-to-VM connectivity
 
----
+2. **Security Hardening**
+   - SSH key-based authentication across all VMs
+   - Disabled password authentication and root login
+   - Active firewall on all systems
+   - Intrusion detection with fail2ban
+   - Automatic security patching
 
-### Step 1.3: Clone VMs (NEXT STEP)
-- Take VM snapshot (backup before cloning)
-- Clone baseline-template 4 times
-- Create and configure:
-  - control-node (10.0.2.11 / 192.168.56.11)
-  - web-server (10.0.2.12 / 192.168.56.12)
-  - app-server (10.0.2.13 / 192.168.56.13)
-  - db-server (10.0.2.14 / 192.168.56.14)
-- Configure each with unique hostnames and IPs
-- Verify connectivity between all VMs
+3. **Monitoring Foundation**
+   - Metrics collection agent on all VMs
+   - Ready for centralized monitoring (Phase 3)
 
-### Documentation
-- ✅ All commands documented
-- ✅ Runbook created
-- Ready for automation in Phase 2
+4. **Documentation**
+   - Complete command history
+   - Network diagrams
+   - Configuration reference
+   - Troubleshooting notes
 
----
+### 📊 Time Invested
+Approximately **3-4 hours** of hands-on work
 
-## Next Steps
-
-1. **Install node_exporter** (monitoring agent)
-2. **Take VM snapshot** (backup before cloning)
-3. **Clone baseline-template** to create other VMs
-4. **Test connectivity** between all VMs
-5. **Begin Phase 2**: Convert manual steps to Ansible playbooks
-
----
-
-## Important Files & Locations
-
-### Configuration Files Modified
-- `/etc/ssh/sshd_config` - SSH hardening
-- `/etc/ssh/sshd_config.backup` - Original SSH config backup
-- `/etc/fail2ban/jail.local` - fail2ban configuration
-- `/etc/apt/apt.conf.d/50unattended-upgrades` - Auto-update settings
-- `/etc/hosts` - Hostname configuration
-- `~/.ssh/authorized_keys` - SSH public key
-
-### Log Files to Monitor
-- `/var/log/auth.log` - SSH authentication attempts
-- `/var/log/fail2ban.log` - fail2ban actions
-- `/var/log/ufw.log` - Firewall logs
-- `/var/log/unattended-upgrades/` - Auto-update logs
+### 🎯 Skills Demonstrated
+- Linux system administration
+- Network configuration
+- Security hardening
+- SSH key management
+- Firewall configuration
+- Service management (systemd)
+- VM cloning and templating
 
 ---
 
-## Lessons Learned
+## What's Next - Phase 2: Automation with Ansible
 
-1. **NAT Network vs NAT**: NAT Network allows VM-to-VM communication but isolates VMs from host. Need Host-Only adapter for SSH from Windows.
+Now that everything is configured manually, Phase 2 will **automate everything** you just did using Ansible.
 
-2. **SSH Socket Activation**: Modern systemd uses socket activation for SSH, which can override sshd_config port settings. Keeping port 22 is simpler for lab environments.
+### Phase 2 Goals
+- Install Ansible on control-node
+- Create playbooks to replicate all Phase 1 configurations
+- Prove you can rebuild the entire infrastructure from scratch
+- Make configurations idempotent and repeatable
 
-3. **NetworkManager**: Linux Mint uses NetworkManager (nmcli) for network configuration, not traditional /etc/network/interfaces.
+### Phase 2 Deliverables
+- Ansible inventory file
+- Base hardening playbook
+- Service-specific playbooks (web, app, db)
+- Monitoring setup playbook
+- Complete documentation
 
-4. **fail2ban jail names**: Use `sshd` not `ssh` for the jail name.
-
-5. **Firewall before services**: Always configure firewall rules BEFORE enabling services to avoid lockouts.
+### Estimated Time
+**8-12 hours**
 
 ---
 
-## Time Spent on Phase 1
-Approximately 2-3 hours (including troubleshooting)
+## Quick Start Guide for Phase 2
 
-## Ready for Phase 2?
-Once monitoring is installed and VMs are cloned, we'll be ready to begin automating everything with Ansible!
+When you're ready to start Phase 2, here's what you'll do:
+
+1. **SSH into control-node**
+   ```powershell
+   ssh sysadmin@192.168.56.11
+   ```
+
+2. **Install Ansible**
+   ```bash
+   sudo apt update
+   sudo apt install -y ansible
+   ansible --version
+   ```
+
+3. **Create project structure**
+   ```bash
+   mkdir -p ~/infrastructure
+   cd ~/infrastructure
+   ```
+
+4. **Set up SSH keys from control-node to other VMs**
+   ```bash
+   ssh-keygen -t ed25519
+   ssh-copy-id sysadmin@web-server
+   ssh-copy-id sysadmin@app-server
+   ssh-copy-id sysadmin@db-server
+   ```
+
+5. **Create inventory file**
+   ```bash
+   nano inventory/hosts.yml
+   ```
+
+But don't worry about this yet - we'll go through it step by step when you're ready!
 
 ---
 
-**Last Updated:** 2026-01-31  
-**VM Name:** baseline-template  
-**Status:** ✅ Phase 1 COMPLETE - Baseline configured and ready for cloning!
+## Current Status
+
+**Phase 1**: ✅ **100% COMPLETE**  
+**Phase 2**: ⏸️ Ready to Start  
+**Phase 3**: ⏸️ Pending  
+**Phase 4**: ⏸️ Pending  
+**Phase 5**: ⏸️ Pending  
+**Phase 6**: ⏸️ Pending  
+
+---
+
+## Important Notes
+
+### VM Management Tips
+- Keep `baseline-template` powered off - it's your golden image
+- Take snapshots before major changes
+- All 4 active VMs should be running for the project
+- Resource usage: ~8GB RAM total when all running
+
+### Backup Strategy
+- `baseline-template` snapshot: "Phase1-Complete-Baseline"
+- Consider taking snapshots of each configured VM before Phase 2
+- Document any configuration changes
+
+### Cost
+- **$0** - Everything is running locally on your machine
+- No cloud costs, no subscriptions needed
+
+---
+
+## Troubleshooting Quick Reference
+
+### Can't SSH to a VM?
+```bash
+# Check if SSH is running
+sudo systemctl status ssh
+
+# Check firewall
+sudo ufw status
+
+# Check IP address
+ip addr show
+```
+
+### VMs can't ping each other?
+```bash
+# Check routing
+ip route show
+
+# Check /etc/hosts
+cat /etc/hosts
+
+# Verify network interfaces are up
+ip link show
+```
+
+### Internet not working?
+```bash
+# Check DNS
+cat /etc/resolv.conf
+
+# Test connectivity
+ping 8.8.8.8
+ping google.com
+
+# Restart NetworkManager
+sudo systemctl restart NetworkManager
+```
+
+---
+
+**Last Updated**: 2026-01-31  
+**Infrastructure Status**: ✅ Fully Operational  
+**Ready for**: Phase 2 - Ansible Automation
+
+---
+
+## 🎉 Congratulations Again!
+
+You've built a production-quality lab environment from scratch. This is real-world infrastructure work that directly translates to entry-level Linux admin and cloud engineering roles.
+
+**Take a break, review what you've learned, and when you're ready - let's automate everything with Ansible!**
