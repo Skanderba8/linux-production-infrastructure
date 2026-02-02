@@ -51,8 +51,6 @@ This project showcases the complete lifecycle of building, securing, and automat
 7. ⏸️ Test failure scenarios and validate recovery processes
 8. ⏸️ Document everything for knowledge transfer
 
-**Purpose**: Portfolio demonstration for entry-level Linux System Administrator / Junior Cloud/DevOps Engineer positions
-
 **Time Investment**: ~40-50 hours (8 phases)
 
 ---
@@ -1576,9 +1574,9 @@ Feel free to use this project as a template or reference for your own learning!
 **Skander Ba**
 
 - 🌐 GitHub: [@Skanderba8](https://github.com/Skanderba8)
-- 📧 Email: [Your Email]
-- 💼 LinkedIn: [Your LinkedIn Profile]
-- 🌟 Portfolio: [Your Portfolio Website]
+- 📧 Email: [baskander5@gmail.com]
+- 💼 LinkedIn: [Skander Ben Abdallah](https://www.linkedin.com/in/skanderbena5/)
+- 🌟 Portfolio: [Website](http://skander-portfolio-bucket2026.s3-website-eu-west-1.amazonaws.com/)
 
 ---
 
