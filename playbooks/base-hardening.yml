@@ -1,0 +1,42 @@
+---
+# Base System Hardening Playbook
+# Applies security hardening and monitoring to all managed nodes
+# 
+# Usage: ansible-playbook playbooks/base-hardening.yml
+
+- name: Base System Hardening
+  hosts: managed_nodes
+  become: yes
+  
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      tags:
+        - always
+
+    - name: Upgrade all packages to latest version
+      apt:
+        upgrade: dist
+        autoremove: yes
+        autoclean: yes
+      tags:
+        - system
+        - updates
+        
+  roles:
+    - role: ssh_hardening
+      tags: [ssh, security]
+      
+    - role: firewall
+      tags: [firewall, security]
+      
+    - role: fail2ban
+      tags: [fail2ban, security]
+      
+    - role: auto_updates
+      tags: [updates, security]
+      
+    - role: node_exporter
+      tags: [monitoring, node_exporter]

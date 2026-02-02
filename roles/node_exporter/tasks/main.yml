@@ -1,0 +1,76 @@
+---
+# node_exporter Role - Tasks
+# Installs and configures Prometheus node_exporter for metrics collection
+
+- name: Create node_exporter system user
+  user:
+    name: node_exporter
+    shell: /bin/false
+    system: yes
+    create_home: no
+  tags:
+    - monitoring
+    - node_exporter
+
+- name: Download node_exporter
+  get_url:
+    url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
+    dest: "/tmp/node_exporter-{{ node_exporter_version }}.tar.gz"
+    mode: '0644'
+  tags:
+    - monitoring
+    - node_exporter
+
+- name: Extract node_exporter
+  unarchive:
+    src: "/tmp/node_exporter-{{ node_exporter_version }}.tar.gz"
+    dest: /tmp
+    remote_src: yes
+  tags:
+    - monitoring
+    - node_exporter
+
+- name: Copy node_exporter binary to system path
+  copy:
+    src: "/tmp/node_exporter-{{ node_exporter_version }}.linux-amd64/node_exporter"
+    dest: /usr/local/bin/node_exporter
+    remote_src: yes
+    mode: '0755'
+    owner: node_exporter
+    group: node_exporter
+  tags:
+    - monitoring
+    - node_exporter
+
+- name: Clean up temporary files
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "/tmp/node_exporter-{{ node_exporter_version }}.tar.gz"
+    - "/tmp/node_exporter-{{ node_exporter_version }}.linux-amd64"
+  tags:
+    - monitoring
+    - node_exporter
+
+- name: Create node_exporter systemd service
+  template:
+    src: node_exporter.service.j2
+    dest: /etc/systemd/system/node_exporter.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart node_exporter
+  tags:
+    - monitoring
+    - node_exporter
+
+- name: Enable and start node_exporter service
+  systemd:
+    name: node_exporter
+    enabled: yes
+    state: started
+    daemon_reload: yes
+  tags:
+    - monitoring
+    - node_exporter

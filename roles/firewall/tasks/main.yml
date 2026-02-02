@@ -1,0 +1,64 @@
+---
+# Firewall Role - Tasks
+# Configures UFW (Uncomplicated Firewall) with security-focused rules
+
+- name: Install UFW
+  apt:
+    name: ufw
+    state: present
+    update_cache: yes
+  tags:
+    - firewall
+    - security
+
+- name: Set UFW default policy - Deny incoming
+  ufw:
+    direction: incoming
+    policy: deny
+  tags:
+    - firewall
+    - security
+
+- name: Set UFW default policy - Allow outgoing
+  ufw:
+    direction: outgoing
+    policy: allow
+  tags:
+    - firewall
+    - security
+
+- name: Allow SSH from anywhere
+  ufw:
+    rule: allow
+    port: "{{ ssh_port }}"
+    proto: tcp
+  when: ufw_ssh_from_anywhere
+  tags:
+    - firewall
+    - security
+
+- name: Allow node_exporter from NAT network only
+  ufw:
+    rule: allow
+    port: "{{ node_exporter_port }}"
+    proto: tcp
+    from_ip: "{{ nat_network }}"
+  tags:
+    - firewall
+    - security
+    - monitoring
+
+- name: Enable UFW
+  ufw:
+    state: enabled
+  tags:
+    - firewall
+    - security
+
+- name: Ensure UFW service is enabled on boot
+  systemd:
+    name: ufw
+    enabled: yes
+  tags:
+    - firewall
+    - security

@@ -1,0 +1,11 @@
+---
+# node_exporter Role - Handlers
+
+- name: restart node_exporter
+  systemd:
+    name: node_exporter
+    state: restarted
+    daemon_reload: yes
+  tags:
+    - monitoring
+    - node_exporter

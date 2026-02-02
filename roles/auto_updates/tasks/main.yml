@@ -1,0 +1,47 @@
+---
+# Auto Updates Role - Tasks
+# Configures automatic security updates with unattended-upgrades
+
+- name: Install unattended-upgrades package
+  apt:
+    name: unattended-upgrades
+    state: present
+    update_cache: yes
+  tags:
+    - updates
+    - security
+
+- name: Configure automatic security updates
+  lineinfile:
+    path: /etc/apt/apt.conf.d/50unattended-upgrades
+    regexp: '^\s*"{{ item.origin }}";'
+    line: '        "{{ item.origin }}";'
+    state: present
+  loop:
+    - { origin: '${distro_id}:${distro_codename}-security' }
+  tags:
+    - updates
+    - security
+
+- name: Enable automatic updates
+  copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+      APT::Periodic::AutocleanInterval "7";
+    owner: root
+    group: root
+    mode: '0644'
+  tags:
+    - updates
+    - security
+
+- name: Ensure unattended-upgrades service is enabled
+  systemd:
+    name: unattended-upgrades
+    enabled: yes
+    state: started
+  tags:
+    - updates
+    - security

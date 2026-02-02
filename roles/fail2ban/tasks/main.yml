@@ -1,0 +1,33 @@
+---
+# fail2ban Role - Tasks
+# Configures fail2ban for SSH intrusion prevention
+
+- name: Install fail2ban
+  apt:
+    name: fail2ban
+    state: present
+    update_cache: yes
+  tags:
+    - fail2ban
+    - security
+
+- name: Configure fail2ban local jail
+  template:
+    src: jail.local.j2
+    dest: /etc/fail2ban/jail.local
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart fail2ban
+  tags:
+    - fail2ban
+    - security
+
+- name: Ensure fail2ban is enabled and running
+  systemd:
+    name: fail2ban
+    enabled: yes
+    state: started
+  tags:
+    - fail2ban
+    - security

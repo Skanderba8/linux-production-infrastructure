@@ -1,0 +1,10 @@
+---
+# fail2ban Role - Handlers
+
+- name: restart fail2ban
+  systemd:
+    name: fail2ban
+    state: restarted
+  tags:
+    - fail2ban
+    - security
