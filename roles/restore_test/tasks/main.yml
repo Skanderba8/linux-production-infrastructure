@@ -1,0 +1,61 @@
+---
+- name: Create test database for restore
+  command: PGPASSWORD={{ db_password }} psql -h {{ test_db_host }} -U {{ db_user }} -c "CREATE DATABASE {{ test_db_name }};"
+  ignore_errors: yes  # If database exists
+
+- name: Find latest database backup
+  find:
+    paths: "{{ backup_dir }}/database/daily"
+    patterns: "*.sql.gz"
+    recurse: no
+  register: db_backups
+  delegate_to: localhost
+
+- name: Restore latest database backup to test DB
+  shell: gunzip -c {{ item.path }} | PGPASSWORD={{ db_password }} psql -h {{ test_db_host }} -U {{ db_user }} {{ test_db_name }}
+  loop: "{{ db_backups.files | sort(attribute='mtime', reverse=true) | first }}"
+  delegate_to: localhost
+
+- name: Verify test database content
+  command: PGPASSWORD={{ db_password }} psql -h {{ test_db_host }} -U {{ db_user }} -d {{ test_db_name }} -c "SELECT * FROM users;"
+  delegate_to: localhost
+  register: db_content
+
+- name: Display test database content
+  debug:
+    msg: "{{ db_content.stdout }}"
+
+- name: Find latest config backup
+  find:
+    paths: "{{ backup_dir }}/configs/daily"
+    patterns: "*.tar.gz"
+    recurse: no
+  register: config_backups
+  delegate_to: localhost
+
+- name: Extract latest config backup to temp dir
+  unarchive:
+    src: "{{ item.path }}"
+    dest: /tmp/restore-test/
+    remote_src: yes
+  loop: "{{ config_backups.files | sort(attribute='mtime', reverse=true) | first }}"
+  delegate_to: localhost
+
+- name: Verify extracted configs
+  shell: ls -lh /tmp/restore-test/
+  register: extracted_files
+  delegate_to: localhost
+
+- name: Display extracted files
+  debug:
+    msg: "{{ extracted_files.stdout }}"
+
+- name: Cleanup test database
+  command: PGPASSWORD={{ db_password }} psql -h {{ test_db_host }} -U {{ db_user }} -c "DROP DATABASE {{ test_db_name }};"
+  ignore_errors: yes
+
+- name: Cleanup temp restore dir
+  file:
+    path: /tmp/restore-test
+    state: absent
+  delegate_to: localhost
