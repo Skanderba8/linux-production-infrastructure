@@ -1,0 +1,76 @@
+---
+- name: Verify All Services
+  hosts: managed_nodes
+  become: yes
+  gather_facts: yes
+  
+  tasks:
+    - name: Check if running on web server
+      block:
+        - name: Verify Nginx is running
+          service:
+            name: nginx
+            state: started
+          check_mode: yes
+          
+        - name: Test Nginx response
+          uri:
+            url: http://localhost/
+            return_content: yes
+          register: nginx_test
+          
+        - name: Display web server status
+          debug:
+            msg: "Web Server: Nginx running and responding ✓"
+      when: inventory_hostname in groups['web_servers']
+    
+    - name: Check if running on app server
+      block:
+        - name: Verify app service is running
+          service:
+            name: myapp
+            state: started
+          check_mode: yes
+          
+        - name: Test app health endpoint
+          uri:
+            url: http://localhost:3000/health
+            return_content: yes
+          register: app_test
+          
+        - name: Display app server status
+          debug:
+            msg: "App Server: Application running and healthy ✓"
+      when: inventory_hostname in groups['app_servers']
+    
+    - name: Check if running on database server
+      block:
+        - name: Verify PostgreSQL is running
+          service:
+            name: postgresql
+            state: started
+          check_mode: yes
+          
+        - name: Check database exists
+          shell: sudo -u postgres psql -lqt | cut -d \| -f 1 | grep -qw appdb
+          changed_when: false
+          
+        - name: Display database server status
+          debug:
+            msg: "Database Server: PostgreSQL running and appdb exists ✓"
+      when: inventory_hostname in groups['db_servers']
+
+- name: Test End-to-End Connectivity
+  hosts: web_servers
+  become: yes
+  
+  tasks:
+    - name: Test full request through web server
+      uri:
+        url: http://localhost/health
+        return_content: yes
+      register: e2e_test
+      
+    - name: Display end-to-end test result
+      debug:
+        msg: "End-to-End Test: {{ 'SUCCESS ✓' if e2e_test.status == 200 else 'FAILED ✗' }}"
