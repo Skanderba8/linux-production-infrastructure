@@ -1,4 +1,4 @@
-# Linux Production Infrastructure - Automated with Ansible
+![30cccahgncv61](https://github.com/user-attachments/assets/398689b6-0d41-4115-9010-f176b678d02f)# Linux Production Infrastructure - Automated with Ansible
 
 > A production-style Linux infrastructure project demonstrating system administration, security hardening, and Infrastructure as Code (IaC) practices using Ansible automation.
 
@@ -443,6 +443,8 @@ Overall: ███████████████████████�
 ---
 
 ### Phase 3 Achievement Summary
+<img width="1900" height="917" alt="dashboard1" src="https://github.com/user-attachments/assets/48c5435e-dada-4813-886f-78e20c71b7b6" />
+<img width="1901" height="904" alt="dashboard2" src="https://github.com/user-attachments/assets/7b73fe91-9f73-4817-8310-974696bea6f9" />
 
 **Monitoring Infrastructure Deployed**:
 - ✅ Prometheus 3.9.1 installed and configured on control-node
@@ -464,6 +466,7 @@ Overall: ███████████████████████�
 - ✅ "SIMPLE TEST - RAW METRICS" - Debug/verification dashboard
 - ✅ "GUARANTEED WORKING - TABLE VIEW" - Tabular data display
 - ✅ "GUARANTEED WORKING - STAT VIEW" - Stat panel dashboard
+
 
 **Testing Results**:
 - ✅ Prometheus scraping all 4 targets (all "UP")
