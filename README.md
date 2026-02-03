@@ -1,4 +1,3 @@
-![30cccahgncv61](https://github.com/user-attachments/assets/398689b6-0d41-4115-9010-f176b678d02f)# Linux Production Infrastructure - Automated with Ansible
 
 > A production-style Linux infrastructure project demonstrating system administration, security hardening, and Infrastructure as Code (IaC) practices using Ansible automation.
 
@@ -140,6 +139,7 @@ Security: Each tier only accepts connections from the previous tier
 
 ### Phase 1: Manual Base Configuration ✅ COMPLETE
 **Objective**: Build the infrastructure foundation manually to understand every component
+<img width="1900" height="1024" alt="infra2" src="https://github.com/user-attachments/assets/6b13de37-13a4-4a58-835c-d8c63c7c0190" />
 
 **Tasks Completed**:
 - [x] VirtualBox environment setup with NAT and Host-Only networks
@@ -235,7 +235,8 @@ Security: Each tier only accepts connections from the previous tier
 
 ### Phase 3: Centralized Monitoring ✅ COMPLETE
 **Objective**: Implement Prometheus and Grafana for infrastructure monitoring
-
+<img width="1900" height="917" alt="dashboard1" src="https://github.com/user-attachments/assets/48c5435e-dada-4813-886f-78e20c71b7b6" />
+<img width="1901" height="904" alt="dashboard2" src="https://github.com/user-attachments/assets/7b73fe91-9f73-4817-8310-974696bea6f9" />
 **Tasks Completed**:
 
 #### Step 3.1: Prometheus Deployment ✅
@@ -443,8 +444,6 @@ Overall: ███████████████████████�
 ---
 
 ### Phase 3 Achievement Summary
-<img width="1900" height="917" alt="dashboard1" src="https://github.com/user-attachments/assets/48c5435e-dada-4813-886f-78e20c71b7b6" />
-<img width="1901" height="904" alt="dashboard2" src="https://github.com/user-attachments/assets/7b73fe91-9f73-4817-8310-974696bea6f9" />
 
 **Monitoring Infrastructure Deployed**:
 - ✅ Prometheus 3.9.1 installed and configured on control-node
