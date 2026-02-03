@@ -1,0 +1,41 @@
+---
+# Global variables for all hosts
+
+# User configuration
+admin_user: sysadmin
+
+# SSH configuration
+ssh_port: 22
+ssh_permit_root_login: 'no'
+ssh_password_authentication: 'no'
+ssh_pubkey_authentication: 'yes'
+
+# Firewall configuration
+ufw_default_incoming: deny
+ufw_default_outgoing: allow
+ufw_ssh_from_anywhere: true
+
+# fail2ban configuration
+fail2ban_maxretry: 3
+fail2ban_bantime: 3600
+fail2ban_findtime: 600
+
+# node_exporter configuration
+node_exporter_version: "1.8.2"
+node_exporter_port: 9100
+
+# Network configuration
+nat_network: "10.0.2.0/24"
+
+# Application configuration
+app_directory: /opt/myapp
+app_user: appuser
+app_service_name: myapp
+app_server_port: 3000
+app_server_ip: 10.0.2.13
+web_server_domain: localhost
+
+# Database configuration
+db_name: appdb
+db_user: appuser
+db_password: "SecurePassword123!"  # Change this in production!

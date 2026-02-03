@@ -1,0 +1,27 @@
+---
+- name: Configure Database Server (PostgreSQL)
+  hosts: db_servers
+  become: yes
+  vars:
+    db_name: appdb
+    db_user: appuser
+    db_password: "SecurePassword123!"
+    app_server_ip: 10.0.2.13
+  
+  pre_tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+  
+  roles:
+    - role: postgresql
+      tags: [database, postgresql]
+  
+  post_tasks:
+    - name: Allow PostgreSQL from app server only
+      ufw:
+        rule: allow
+        from_ip: 10.0.2.13
+        port: '5432'
+        proto: tcp

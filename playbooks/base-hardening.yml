@@ -7,7 +7,21 @@
 - name: Base System Hardening
   hosts: managed_nodes
   become: yes
-  
+  vars:
+    ssh_port: 22
+    ssh_permit_root_login: 'no'
+    ssh_password_authentication: 'no'
+    ssh_pubkey_authentication: 'yes'
+    ufw_default_incoming: deny
+    ufw_default_outgoing: allow
+    ufw_ssh_from_anywhere: true
+    fail2ban_maxretry: 3
+    fail2ban_bantime: 3600
+    fail2ban_findtime: 600
+    node_exporter_version: "1.8.2"
+    node_exporter_port: 9100
+    admin_user: sysadmin
+    nat_network: "10.0.2.0/24"  
   tasks:
     - name: Update apt cache
       apt:

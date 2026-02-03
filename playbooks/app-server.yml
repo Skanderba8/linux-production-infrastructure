@@ -1,0 +1,27 @@
+---
+- name: Configure Application Server
+  hosts: app_servers
+  become: yes
+  vars:
+    app_directory: /opt/myapp
+    app_user: appuser
+    app_service_name: myapp
+    app_server_port: 3000
+  
+  pre_tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+  
+  roles:
+    - role: nodejs_app
+      tags: [app, nodejs]
+  
+  post_tasks:
+    - name: Allow application port from web server
+      ufw:
+        rule: allow
+        from_ip: 10.0.2.12
+        port: '3000'
+        proto: tcp

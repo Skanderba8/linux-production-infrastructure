@@ -1,0 +1,66 @@
+---
+# Node.js application deployment
+
+- name: Install Node.js and npm
+  apt:
+    name:
+      - nodejs
+      - npm
+    state: present
+    update_cache: yes
+
+- name: Create application directory
+  file:
+    path: "{{ app_directory }}"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0755'
+
+- name: Create application user
+  user:
+    name: "{{ app_user }}"
+    system: yes
+    shell: /bin/bash
+    home: "{{ app_directory }}"
+    create_home: no
+
+- name: Copy sample application
+  template:
+    src: app.js.j2
+    dest: "{{ app_directory }}/app.js"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0644'
+  notify: Restart app service
+
+- name: Copy package.json
+  template:
+    src: package.json.j2
+    dest: "{{ app_directory }}/package.json"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0644'
+
+- name: Install Node.js dependencies
+  npm:
+    path: "{{ app_directory }}"
+    state: present
+  become_user: "{{ app_user }}"
+
+- name: Create systemd service for application
+  template:
+    src: app.service.j2
+    dest: /etc/systemd/system/{{ app_service_name }}.service
+    mode: '0644'
+  notify: Restart app service
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: yes
+
+- name: Ensure application service is enabled and running
+  service:
+    name: "{{ app_service_name }}"
+    state: started
+    enabled: yes

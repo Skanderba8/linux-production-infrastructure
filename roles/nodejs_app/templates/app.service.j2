@@ -1,0 +1,21 @@
+[Unit]
+Description={{ app_service_name }} - Node.js Application
+After=network.target
+
+[Service]
+Type=simple
+User={{ app_user }}
+WorkingDirectory={{ app_directory }}
+ExecStart=/usr/bin/node {{ app_directory }}/app.js
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier={{ app_service_name }}
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

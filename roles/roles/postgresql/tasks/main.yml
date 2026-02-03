@@ -1,0 +1,64 @@
+---
+# PostgreSQL installation and configuration
+
+- name: Install PostgreSQL and dependencies
+  apt:
+    name:
+      - postgresql
+      - postgresql-contrib
+      - python3-psycopg2
+    state: present
+    update_cache: yes
+
+- name: Ensure PostgreSQL service is running
+  service:
+    name: postgresql
+    state: started
+    enabled: yes
+
+- name: Create application database
+  postgresql_db:
+    name: "{{ db_name }}"
+    encoding: UTF-8
+    lc_collate: en_US.UTF-8
+    lc_ctype: en_US.UTF-8
+    template: template0
+  become_user: postgres
+
+- name: Create application database user
+  postgresql_user:
+    name: "{{ db_user }}"
+    password: "{{ db_password }}"
+    db: "{{ db_name }}"
+    priv: ALL
+    role_attr_flags: NOSUPERUSER,NOCREATEDB
+  become_user: postgres
+
+- name: Configure PostgreSQL to listen on private network
+  lineinfile:
+    path: /etc/postgresql/*/main/postgresql.conf
+    regexp: '^#?listen_addresses'
+    line: "listen_addresses = 'localhost,{{ ansible_host }}'"
+    backup: yes
+  notify: Restart PostgreSQL
+
+- name: Configure PostgreSQL authentication
+  lineinfile:
+    path: /etc/postgresql/*/main/pg_hba.conf
+    line: "host    {{ db_name }}    {{ db_user }}    {{ app_server_ip }}/32    md5"
+    backup: yes
+  notify: Restart PostgreSQL
+
+- name: Create sample table
+  postgresql_query:
+    db: "{{ db_name }}"
+    login_user: "{{ db_user }}"
+    login_password: "{{ db_password }}"
+    query: |
+      CREATE TABLE IF NOT EXISTS health_check (
+        id SERIAL PRIMARY KEY,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        status VARCHAR(50)
+      );
+  become_user: postgres
+  ignore_errors: yes

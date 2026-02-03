@@ -1,0 +1,30 @@
+---
+- name: Configure Web Server (Nginx)
+  hosts: web_servers
+  become: yes
+  vars:
+    app_server_ip: 10.0.2.13
+    app_server_port: 3000
+  
+  pre_tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+  
+  roles:
+    - role: nginx
+      tags: [nginx, web]
+  
+  post_tasks:
+    - name: Open HTTP port in firewall
+      ufw:
+        rule: allow
+        port: '80'
+        proto: tcp
+      
+    - name: Open HTTPS port in firewall
+      ufw:
+        rule: allow
+        port: '443'
+        proto: tcp

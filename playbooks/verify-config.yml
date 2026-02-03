@@ -1,0 +1,56 @@
+---
+- name: Verify System Configuration
+  hosts: managed_nodes
+  become: yes
+  gather_facts: yes
+  vars:
+    node_exporter_port: 9100  
+  tasks:
+    - name: Check SSH service is running
+      service:
+        name: ssh
+        state: started
+      check_mode: yes
+      register: ssh_status
+      
+    - name: Check UFW is enabled and running
+      command: ufw status
+      register: ufw_status
+      changed_when: false
+      
+    - name: Check fail2ban is running
+      service:
+        name: fail2ban
+        state: started
+      check_mode: yes
+      register: fail2ban_status
+      
+    - name: Check node_exporter is running
+      service:
+        name: node_exporter
+        state: started
+      check_mode: yes
+      register: node_exporter_status
+      
+    - name: Check unattended-upgrades is configured
+      stat:
+        path: /etc/apt/apt.conf.d/50unattended-upgrades
+      register: auto_updates_config
+      
+    - name: Test node_exporter metrics endpoint
+      uri:
+        url: "http://localhost:{{ node_exporter_port }}/metrics"
+        return_content: yes
+      register: metrics_test
+      failed_when: false
+      
+    - name: Display verification results
+      debug:
+        msg:
+          - "=== Verification Results for {{ inventory_hostname }} ==="
+          - "SSH Service: {{ 'Running ✓' if ssh_status is success else 'FAILED ✗' }}"
+          - "UFW Firewall: {{ 'Active ✓' if 'Status: active' in ufw_status.stdout else 'INACTIVE ✗' }}"
+          - "fail2ban: {{ 'Running ✓' if fail2ban_status is success else 'FAILED ✗' }}"
+          - "node_exporter: {{ 'Running ✓' if node_exporter_status is success else 'FAILED ✗' }}"
+          - "Auto Updates: {{ 'Configured ✓' if auto_updates_config.stat.exists else 'NOT CONFIGURED ✗' }}"
+          - "Metrics Endpoint: {{ 'ACCESSIBLE ✓' if metrics_test.status == 200 else 'FAILED ✗' }}"
