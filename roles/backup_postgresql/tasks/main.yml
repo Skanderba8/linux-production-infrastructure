@@ -1,0 +1,50 @@
+---
+# Tasks for backup_postgresql role
+
+- name: Ensure backup directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ backup_user }}"
+    group: "{{ backup_user }}"
+    mode: '0755'
+  loop:
+    - "{{ backup_base_dir }}"
+    - "{{ backup_base_dir }}/daily"
+    - "{{ backup_base_dir }}/weekly"
+    - "{{ backup_base_dir }}/monthly"
+    - /var/backups/logs
+
+- name: Install PostgreSQL client tools
+  apt:
+    name: postgresql-client
+    state: present
+    update_cache: yes
+  become: yes
+
+- name: Deploy backup script
+  template:
+    src: backup-database.sh.j2
+    dest: /usr/local/bin/backup-database.sh
+    owner: root
+    group: root
+    mode: '0750'
+  become: yes
+
+- name: Create cron job for daily database backup
+  cron:
+    name: "Daily PostgreSQL backup"
+    minute: "0"
+    hour: "2"
+    job: "/usr/local/bin/backup-database.sh"
+    user: "{{ backup_user }}"
+    state: present
+  become: yes
+
+- name: Display backup information
+  debug:
+    msg:
+      - "Backup configured successfully!"
+      - "Backup location: {{ backup_base_dir }}"
+      - "Daily backups at: 2:00 AM"
+      - "Retention: {{ daily_retention }} days, {{ weekly_retention/7|int }} weeks, {{ monthly_retention/30|int }} months"

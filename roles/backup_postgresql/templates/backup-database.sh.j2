@@ -1,0 +1,94 @@
+#!/bin/bash
+#
+# PostgreSQL Backup Script
+# Managed by Ansible - Do not edit manually
+#
+
+set -e  # Exit on error
+
+# Configuration
+BACKUP_DIR="{{ backup_base_dir }}"
+DB_NAME="{{ db_name }}"
+DB_USER="{{ db_user }}"
+DB_HOST="{{ db_host }}"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+DATE=$(date +%Y%m%d)
+DAY_OF_WEEK=$(date +%u)  # 1=Monday, 7=Sunday
+DAY_OF_MONTH=$(date +%d)
+
+# Backup files
+DAILY_DIR="${BACKUP_DIR}/daily"
+WEEKLY_DIR="${BACKUP_DIR}/weekly"
+MONTHLY_DIR="${BACKUP_DIR}/monthly"
+BACKUP_FILE="${DAILY_DIR}/${DB_NAME}_${TIMESTAMP}.sql.gz"
+LOG_FILE="/var/backups/logs/backup-database-${DATE}.log"
+
+# Create directories if they don't exist
+mkdir -p "${DAILY_DIR}" "${WEEKLY_DIR}" "${MONTHLY_DIR}"
+mkdir -p /var/backups/logs
+
+# Logging function
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "${LOG_FILE}"
+}
+
+log "===== Starting PostgreSQL Backup ====="
+log "Database: ${DB_NAME}"
+log "Host: ${DB_HOST}"
+
+# Perform backup
+log "Creating backup: ${BACKUP_FILE}"
+if PGPASSWORD='{{ db_password }}' pg_dump -h "${DB_HOST}" -U "${DB_USER}" "${DB_NAME}" | gzip > "${BACKUP_FILE}"; then
+    log "✓ Backup created successfully"
+    BACKUP_SIZE=$(du -h "${BACKUP_FILE}" | cut -f1)
+    log "✓ Backup size: ${BACKUP_SIZE}"
+else
+    log "✗ ERROR: Backup failed!"
+    exit 1
+fi
+
+# Verify backup integrity
+log "Verifying backup integrity..."
+if gunzip -t "${BACKUP_FILE}" 2>/dev/null; then
+    log "✓ Backup integrity verified"
+else
+    log "✗ ERROR: Backup file is corrupted!"
+    exit 1
+fi
+
+# Weekly backup (Sunday)
+if [ "${DAY_OF_WEEK}" -eq 7 ]; then
+    WEEKLY_FILE="${WEEKLY_DIR}/${DB_NAME}_weekly_${DATE}.sql.gz"
+    cp "${BACKUP_FILE}" "${WEEKLY_FILE}"
+    log "✓ Weekly backup created: ${WEEKLY_FILE}"
+fi
+
+# Monthly backup (1st-7th of month AND Sunday)
+if [ "${DAY_OF_MONTH}" -le 7 ] && [ "${DAY_OF_WEEK}" -eq 7 ]; then
+    MONTHLY_FILE="${MONTHLY_DIR}/${DB_NAME}_monthly_${DATE}.sql.gz"
+    cp "${BACKUP_FILE}" "${MONTHLY_FILE}"
+    log "✓ Monthly backup created: ${MONTHLY_FILE}"
+fi
+
+# Cleanup old backups
+log "Cleaning up old backups..."
+
+# Daily: Keep last {{ daily_retention }} days
+find "${DAILY_DIR}" -name "*.sql.gz" -type f -mtime +{{ daily_retention }} -delete
+DAILY_COUNT=$(find "${DAILY_DIR}" -name "*.sql.gz" -type f | wc -l)
+log "✓ Daily backups: ${DAILY_COUNT} files"
+
+# Weekly: Keep last {{ weekly_retention }} days
+find "${WEEKLY_DIR}" -name "*.sql.gz" -type f -mtime +{{ weekly_retention }} -delete
+WEEKLY_COUNT=$(find "${WEEKLY_DIR}" -name "*.sql.gz" -type f | wc -l)
+log "✓ Weekly backups: ${WEEKLY_COUNT} files"
+
+# Monthly: Keep last {{ monthly_retention }} days
+find "${MONTHLY_DIR}" -name "*.sql.gz" -type f -mtime +{{ monthly_retention }} -delete
+MONTHLY_COUNT=$(find "${MONTHLY_DIR}" -name "*.sql.gz" -type f | wc -l)
+log "✓ Monthly backups: ${MONTHLY_COUNT} files"
+
+log "===== Backup Complete ====="
+log ""
+
+exit 0

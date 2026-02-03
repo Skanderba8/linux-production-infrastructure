@@ -1,0 +1,151 @@
+#!/bin/bash
+#
+# Configuration Backup Script
+# Managed by Ansible - Do not edit manually
+#
+
+set -e  # Exit on error
+
+# Configuration
+BACKUP_DIR="{{ backup_base_dir }}"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+DATE=$(date +%Y%m%d)
+DAY_OF_WEEK=$(date +%u)  # 1=Monday, 7=Sunday
+DAY_OF_MONTH=$(date +%d)
+
+# Backup directories
+DAILY_DIR="${BACKUP_DIR}/daily"
+WEEKLY_DIR="${BACKUP_DIR}/weekly"
+MONTHLY_DIR="${BACKUP_DIR}/monthly"
+TEMP_DIR="/tmp/config-backup-${TIMESTAMP}"
+LOG_FILE="/var/backups/logs/backup-configs-${DATE}.log"
+
+# Create directories
+mkdir -p "${DAILY_DIR}" "${WEEKLY_DIR}" "${MONTHLY_DIR}" "${TEMP_DIR}"
+mkdir -p /var/backups/logs
+
+# Logging function
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "${LOG_FILE}"
+}
+
+log "===== Starting Configuration Backup ====="
+
+# Function to backup from remote server
+backup_remote() {
+    local SERVER=$1
+    local SOURCE=$2
+    local DEST_NAME=$3
+    
+    log "Backing up ${DEST_NAME} from ${SERVER}..."
+    
+    if ssh ${SERVER} "sudo tar czf - ${SOURCE} 2>/dev/null" > "${TEMP_DIR}/${DEST_NAME}.tar.gz" 2>>"${LOG_FILE}"; then
+        SIZE=$(du -h "${TEMP_DIR}/${DEST_NAME}.tar.gz" | cut -f1)
+        log "✓ ${DEST_NAME}: ${SIZE}"
+        return 0
+    else
+        log "✗ ERROR: Failed to backup ${DEST_NAME} from ${SERVER}"
+        return 1
+    fi
+}
+
+# Function to backup local files
+backup_local() {
+    local SOURCE=$1
+    local DEST_NAME=$2
+    
+    log "Backing up ${DEST_NAME} (local)..."
+    
+    if [ -e "${SOURCE}" ]; then
+        if sudo tar czf "${TEMP_DIR}/${DEST_NAME}.tar.gz" -C / "${SOURCE#/}" 2>/dev/null; then
+            SIZE=$(du -h "${TEMP_DIR}/${DEST_NAME}.tar.gz" | cut -f1)
+            log "✓ ${DEST_NAME}: ${SIZE}"
+            return 0
+        else
+            log "✗ ERROR: Failed to backup ${DEST_NAME}"
+            return 1
+        fi
+    else
+        log "⚠ WARNING: ${SOURCE} does not exist, skipping"
+        return 0
+    fi
+}
+
+# Backup from web-server
+backup_remote "web-server" "/etc/nginx" "web-nginx-config"
+
+# Backup from app-server
+backup_remote "app-server" "/opt/myapp" "app-code"
+
+# Backup from db-server
+backup_remote "db-server" "/etc/postgresql" "db-postgresql-config"
+
+# Backup local control-node configs
+backup_local "/home/{{ backup_user }}/infrastructure" "ansible-infrastructure"
+backup_local "/etc/ssh/sshd_config" "control-ssh-config"
+backup_local "/etc/ufw" "control-ufw-config"
+backup_local "/etc/fail2ban" "control-fail2ban-config"
+
+# Create final archive
+BACKUP_FILE="${DAILY_DIR}/configs_${TIMESTAMP}.tar.gz"
+log "Creating final backup archive..."
+
+cd "${TEMP_DIR}"
+if tar czf "${BACKUP_FILE}" *.tar.gz 2>/dev/null; then
+    TOTAL_SIZE=$(du -h "${BACKUP_FILE}" | cut -f1)
+    log "✓ Final backup created: ${BACKUP_FILE}"
+    log "✓ Total size: ${TOTAL_SIZE}"
+else
+    log "✗ ERROR: Failed to create final backup archive"
+    rm -rf "${TEMP_DIR}"
+    exit 1
+fi
+
+# Cleanup temp directory
+rm -rf "${TEMP_DIR}"
+
+# Verify backup integrity
+log "Verifying backup integrity..."
+if tar tzf "${BACKUP_FILE}" >/dev/null 2>&1; then
+    log "✓ Backup integrity verified"
+else
+    log "✗ ERROR: Backup file is corrupted!"
+    exit 1
+fi
+
+# Weekly backup (Sunday)
+if [ "${DAY_OF_WEEK}" -eq 7 ]; then
+    WEEKLY_FILE="${WEEKLY_DIR}/configs_weekly_${DATE}.tar.gz"
+    cp "${BACKUP_FILE}" "${WEEKLY_FILE}"
+    log "✓ Weekly backup created: ${WEEKLY_FILE}"
+fi
+
+# Monthly backup (1st-7th of month AND Sunday)
+if [ "${DAY_OF_MONTH}" -le 7 ] && [ "${DAY_OF_WEEK}" -eq 7 ]; then
+    MONTHLY_FILE="${MONTHLY_DIR}/configs_monthly_${DATE}.tar.gz"
+    cp "${BACKUP_FILE}" "${MONTHLY_FILE}"
+    log "✓ Monthly backup created: ${MONTHLY_FILE}"
+fi
+
+# Cleanup old backups
+log "Cleaning up old backups..."
+
+# Daily: Keep last {{ daily_retention }} days
+find "${DAILY_DIR}" -name "*.tar.gz" -type f -mtime +{{ daily_retention }} -delete
+DAILY_COUNT=$(find "${DAILY_DIR}" -name "*.tar.gz" -type f | wc -l)
+log "✓ Daily backups: ${DAILY_COUNT} files"
+
+# Weekly: Keep last {{ weekly_retention }} days
+find "${WEEKLY_DIR}" -name "*.tar.gz" -type f -mtime +{{ weekly_retention }} -delete
+WEEKLY_COUNT=$(find "${WEEKLY_DIR}" -name "*.tar.gz" -type f | wc -l)
+log "✓ Weekly backups: ${WEEKLY_COUNT} files"
+
+# Monthly: Keep last {{ monthly_retention }} days
+find "${MONTHLY_DIR}" -name "*.tar.gz" -type f -mtime +{{ monthly_retention }} -delete
+MONTHLY_COUNT=$(find "${MONTHLY_DIR}" -name "*.tar.gz" -type f | wc -l)
+log "✓ Monthly backups: ${MONTHLY_COUNT} files"
+
+log "===== Configuration Backup Complete ====="
+log ""
+
+exit 0

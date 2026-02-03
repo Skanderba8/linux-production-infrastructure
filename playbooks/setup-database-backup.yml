@@ -1,0 +1,20 @@
+---
+- name: Setup PostgreSQL Backup Automation
+  hosts: localhost
+  connection: local
+  become: yes
+  vars:
+    db_password: "SecurePassword123!"
+  
+  tasks:
+    - name: Include backup_postgresql role
+      include_role:
+        name: backup_postgresql
+      vars:
+        backup_user: sysadmin
+        db_name: appdb
+        db_user: appuser
+        db_host: 10.0.2.14
+        daily_retention: 7
+        weekly_retention: 28
+        monthly_retention: 90

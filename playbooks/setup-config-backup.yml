@@ -1,0 +1,15 @@
+---
+- name: Setup Configuration Backup Automation
+  hosts: localhost
+  connection: local
+  become: yes
+  
+  tasks:
+    - name: Include backup_configs role
+      include_role:
+        name: backup_configs
+      vars:
+        backup_user: sysadmin
+        daily_retention: 7
+        weekly_retention: 28
+        monthly_retention: 90

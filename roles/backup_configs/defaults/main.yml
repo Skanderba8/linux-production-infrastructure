@@ -1,0 +1,10 @@
+---
+# Default variables for backup_configs role
+
+backup_base_dir: /var/backups/configs
+backup_user: sysadmin
+
+# Retention periods (in days)
+daily_retention: 7
+weekly_retention: 28
+monthly_retention: 90

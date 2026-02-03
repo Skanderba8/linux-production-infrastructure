@@ -1,0 +1,13 @@
+---
+# Default variables for backup_postgresql role
+
+backup_base_dir: /var/backups/database
+backup_user: sysadmin
+db_name: appdb
+db_user: appuser
+db_host: 10.0.2.14
+
+# Retention periods (in days)
+daily_retention: 7
+weekly_retention: 28
+monthly_retention: 90
