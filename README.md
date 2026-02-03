@@ -2,7 +2,7 @@
 
 > A production-style Linux infrastructure project demonstrating system administration, security hardening, and Infrastructure as Code (IaC) practices using Ansible automation.
 
-[![Project Status](https://img.shields.io/badge/Status-Phase%202%20In%20Progress-yellow)]()
+[![Project Status](https://img.shields.io/badge/Status-Phase%202%20Complete-green)]()
 [![Infrastructure](https://img.shields.io/badge/Infrastructure-VirtualBox-blue)]()
 [![Automation](https://img.shields.io/badge/Automation-Ansible-red)]()
 [![OS](https://img.shields.io/badge/OS-Linux%20Mint%2022-green)]()
@@ -36,22 +36,23 @@ This project showcases the complete lifecycle of building, securing, and automat
 - **Infrastructure as Code (IaC)**: Everything is reproducible and version-controlled
 - **Security First**: Multi-layered security approach with automated hardening
 - **Automation**: Manual tasks converted to reusable Ansible playbooks
-- **Monitoring & Observability**: Metrics collection and alerting capabilities
-- **Disaster Recovery**: Backup and restore procedures with validation
+- **Service Deployment**: Full 3-tier web application stack (Nginx → Node.js → PostgreSQL)
+- **Monitoring Ready**: Metrics collection infrastructure with node_exporter
 - **Professional Documentation**: Clear, comprehensive, and maintainable
 
 ### Project Goals
 
 1. ✅ Build a multi-server Linux environment with proper networking
 2. ✅ Implement security best practices (SSH hardening, firewalls, intrusion prevention)
-3. 🚧 Automate everything with Ansible for repeatability
-4. ⏸️ Deploy production-ready services (web, application, database tiers)
+3. ✅ Automate everything with Ansible for repeatability
+4. ✅ Deploy production-ready services (web, application, database tiers)
 5. ⏸️ Implement centralized monitoring and alerting
 6. ⏸️ Create automated backup and disaster recovery procedures
 7. ⏸️ Test failure scenarios and validate recovery processes
 8. ⏸️ Document everything for knowledge transfer
 
-**Time Investment**: ~40-50 hours (8 phases)
+**Time Investment**: ~40-50 hours (8 phases)  
+**Current Time Spent**: ~15 hours
 
 ---
 
@@ -62,7 +63,7 @@ This project showcases the complete lifecycle of building, securing, and automat
 - **Hypervisor**: VirtualBox 7.x on Windows 11 host
 - **Operating System**: Linux Mint 22 (based on Ubuntu 24.04 LTS)
 - **Network**: Dual-adapter setup (NAT + Host-Only)
-- **Automation Platform**: Ansible 2.x
+- **Automation Platform**: Ansible 2.16+
 - **Version Control**: Git / GitHub
 
 ### Server Topology
@@ -72,8 +73,8 @@ This project showcases the complete lifecycle of building, securing, and automat
 | **baseline-template** | Golden Image | 10.0.2.10 | 192.168.56.10 | 2 | 2GB | 25GB | 🔴 Powered Off |
 | **control-node** | Ansible Controller | 10.0.2.11 | 192.168.56.11 | 2 | 2GB | 25GB | 🟢 Running |
 | **web-server** | Nginx Reverse Proxy | 10.0.2.12 | 192.168.56.12 | 2 | 2GB | 25GB | 🟢 Running |
-| **app-server** | Application Server | 10.0.2.13 | 192.168.56.13 | 2 | 2GB | 25GB | 🟢 Running |
-| **db-server** | Database Server | 10.0.2.14 | 192.168.56.14 | 2 | 4GB | 50GB | 🟢 Running |
+| **app-server** | Node.js Application | 10.0.2.13 | 192.168.56.13 | 2 | 2GB | 25GB | 🟢 Running |
+| **db-server** | PostgreSQL Database | 10.0.2.14 | 192.168.56.14 | 2 | 4GB | 50GB | 🟢 Running |
 
 ### Network Architecture
 
@@ -124,20 +125,14 @@ This project showcases the complete lifecycle of building, securing, and automat
                     └───────────────┘
 ```
 
-### Network Explanation
+### Application Flow
 
-**Two Network Adapters per VM:**
-
-1. **NAT Network (enp0s3)** - `10.0.2.0/24`
-   - VM-to-VM communication using hostnames
-   - Internet access for updates and packages
-   - Internal service communication
-   - **Used by Ansible** for automation
-
-2. **Host-Only Network (enp0s8)** - `192.168.56.0/24`
-   - SSH access from Windows host
-   - Management and administration
-   - Development and debugging
+```
+Internet → [Web Server:80] → [App Server:3000] → [Database:5432]
+            Nginx Proxy       Express.js API      PostgreSQL
+            
+Security: Each tier only accepts connections from the previous tier
+```
 
 ---
 
@@ -162,64 +157,83 @@ This project showcases the complete lifecycle of building, securing, and automat
 
 ---
 
-### Phase 2: Automation with Ansible 🚧 IN PROGRESS
+### Phase 2: Automation with Ansible ✅ COMPLETE
 **Objective**: Convert all manual configurations into automated, repeatable Ansible playbooks
 
-**Current Progress**:
-- [x] Installed Ansible on control-node
-- [x] Created project directory structure
-- [x] Generated SSH keys for Ansible
-- [x] Distributed SSH keys to managed nodes
+**Tasks Completed**:
+
+#### Step 2.1: Ansible Control Node Setup ✅
+- [x] Installed Ansible 2.16+ on control-node
+- [x] Created complete project directory structure
+- [x] Generated SSH keys for Ansible automation
+- [x] Distributed SSH keys to all managed nodes
 - [x] Configured passwordless sudo on all managed nodes
-- [x] Created ansible.cfg configuration
-- [x] Created inventory file with host groups
-- [x] Tested Ansible connectivity with ping module
-- [x] Created .gitignore for repository
+- [x] Created ansible.cfg with optimized settings
+- [x] Created inventory file with logical host groups
+- [x] Created group_vars/all.yml with global variables
+- [x] Tested Ansible connectivity (ping module)
 - [x] Initialized Git repository
 - [x] Pushed to GitHub repository
-- [ ] Create roles directory structure
-- [ ] Develop SSH hardening role
-- [ ] Develop firewall (UFW) role
-- [ ] Develop fail2ban role
-- [ ] Develop auto-updates role
-- [ ] Develop node_exporter monitoring role
-- [ ] Create base-hardening.yml playbook
-- [ ] Create verify-config.yml playbook
-- [ ] Test playbook idempotency
-- [ ] Create snapshot: `Phase2-Complete-Ansible-Automation`
 
-**Estimated Time**: 8-12 hours  
-**Status**: 🚧 40% Complete  
-**Next Steps**: Create Ansible roles for each security component
+#### Step 2.2: Base Security Hardening Automation ✅
+- [x] Created 5 security roles:
+  - `ssh_hardening` - SSH security configuration
+  - `firewall` - UFW firewall rules  
+  - `fail2ban` - Intrusion prevention system
+  - `auto_updates` - Unattended security patches
+  - `node_exporter` - Prometheus metrics exporter
+- [x] Created base-hardening.yml playbook
+- [x] Successfully executed on all 3 managed nodes
+- [x] Tested and verified idempotency
+- [x] Created verify-config.yml verification playbook
+- [x] All security services running and verified
+
+#### Step 2.3: Service-Specific Playbooks ✅
+- [x] **Web Server Deployment**:
+  - Created `nginx` role with reverse proxy configuration
+  - Configured security headers
+  - Created web-server.yml playbook
+  - Deployed and verified Nginx
+  - Opened firewall ports 80, 443
+  
+- [x] **Application Server Deployment**:
+  - Created `nodejs_app` role
+  - Deployed Express.js sample application
+  - Configured systemd service (myapp.service)
+  - Created app-server.yml playbook
+  - Service running and health checks passing
+  - Restricted access to web server only
+  
+- [x] **Database Server Deployment**:
+  - Created `postgresql` role
+  - Installed PostgreSQL 16
+  - Created application database (appdb)
+  - Created database user (appuser)
+  - Configured network access from app server
+  - Created db-server.yml playbook
+  - Database accessible and verified
+
+#### Step 2.4: End-to-End Testing ✅
+- [x] Created comprehensive verification playbook
+- [x] Tested Web → App connectivity
+- [x] Tested App → Database connectivity
+- [x] Verified full request flow (end-to-end)
+- [x] All services passing health checks
+
+**Deliverables Completed**:
+- 8 Ansible roles (reusable components)
+- 6 Ansible playbooks (automation scripts)
+- Complete 3-tier application stack
+- Full security hardening
+- Monitoring foundation
+
+**Time Invested**: ~11 hours  
+**Status**: ✅ 100% Complete  
+**Snapshot**: `Phase2-Complete-Full-Automation` (ready to create)
 
 ---
 
-### Phase 3: Service Deployment ⏸️ PENDING
-**Objective**: Deploy production-ready services using Ansible
-
-**Planned Tasks**:
-- [ ] Deploy Nginx as reverse proxy on web-server
-- [ ] Configure SSL/TLS certificates
-- [ ] Deploy sample Node.js/Python application on app-server
-- [ ] Install and configure PostgreSQL on db-server
-- [ ] Set up database users and permissions
-- [ ] Configure service communication between tiers
-- [ ] Implement health checks
-- [ ] Create service-specific playbooks
-- [ ] Test full application stack
-- [ ] Document service architecture
-
-**Deliverables**:
-- Working web → app → database architecture
-- Service configuration playbooks
-- Health check scripts
-- Architecture documentation
-
-**Estimated Time**: 8-10 hours
-
----
-
-### Phase 4: Centralized Monitoring ⏸️ PENDING
+### Phase 3: Centralized Monitoring ⏸️ NEXT PHASE
 **Objective**: Implement Prometheus and Grafana for infrastructure monitoring
 
 **Planned Tasks**:
@@ -242,7 +256,7 @@ This project showcases the complete lifecycle of building, securing, and automat
 
 ---
 
-### Phase 5: Centralized Logging ⏸️ PENDING
+### Phase 4: Centralized Logging ⏸️ PENDING
 **Objective**: Implement centralized log management with rsyslog or ELK stack
 
 **Planned Tasks**:
@@ -264,7 +278,7 @@ This project showcases the complete lifecycle of building, securing, and automat
 
 ---
 
-### Phase 6: Backup Automation ⏸️ PENDING
+### Phase 5: Backup Automation ⏸️ PENDING
 **Objective**: Implement automated backup and retention policies
 
 **Planned Tasks**:
@@ -288,7 +302,7 @@ This project showcases the complete lifecycle of building, securing, and automat
 
 ---
 
-### Phase 7: Disaster Recovery ⏸️ PENDING
+### Phase 6: Disaster Recovery ⏸️ PENDING
 **Objective**: Develop and test disaster recovery procedures
 
 **Planned Tasks**:
@@ -312,7 +326,7 @@ This project showcases the complete lifecycle of building, securing, and automat
 
 ---
 
-### Phase 8: Failure Testing & Validation ⏸️ PENDING
+### Phase 7: Failure Testing & Validation ⏸️ PENDING
 **Objective**: Test infrastructure resilience and validate all procedures
 
 **Planned Tasks**:
@@ -342,27 +356,50 @@ This project showcases the complete lifecycle of building, securing, and automat
 
 ```
 Phase 1: ████████████████████████████████ 100% ✅ COMPLETE
-Phase 2: ████████████░░░░░░░░░░░░░░░░░░░░  40% 🚧 IN PROGRESS
+Phase 2: ████████████████████████████████ 100% ✅ COMPLETE
 Phase 3: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0% ⏸️  PENDING
 Phase 4: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0% ⏸️  PENDING
 Phase 5: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0% ⏸️  PENDING
 Phase 6: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0% ⏸️  PENDING
 Phase 7: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0% ⏸️  PENDING
-Phase 8: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0% ⏸️  PENDING
 ═══════════════════════════════════════════════════════════
-Overall: ████████░░░░░░░░░░░░░░░░░░░░░░░░  25% Complete
+Overall: ████████████████░░░░░░░░░░░░░░░░  50% Complete
 ```
+
+### Phase 2 Achievement Summary
+
+**Infrastructure Automated**:
+- ✅ 4 VMs fully configured via Ansible
+- ✅ 8 reusable Ansible roles created
+- ✅ 6 functional playbooks developed
+- ✅ Complete 3-tier application stack deployed
+- ✅ Zero manual configuration required
+- ✅ Full idempotency verified
+
+**Services Deployed**:
+- ✅ Nginx reverse proxy (web-server)
+- ✅ Express.js application (app-server)
+- ✅ PostgreSQL 16 database (db-server)
+- ✅ Security hardening (all servers)
+- ✅ Monitoring agents (all servers)
+
+**Testing Results**:
+- ✅ All playbooks execute successfully
+- ✅ Idempotency confirmed (safe to re-run)
+- ✅ End-to-end connectivity verified
+- ✅ All services healthy and responsive
+- ✅ Security measures active and tested
 
 ### Time Investment
 - **Phase 1**: 4 hours ✅
-- **Phase 2**: 3 hours (ongoing) 🚧
-- **Total so far**: 7 hours
-- **Estimated remaining**: 38-48 hours
+- **Phase 2**: 11 hours ✅
+- **Total so far**: 15 hours
+- **Estimated remaining**: 33-41 hours
 
 ### Last Updated
-**Date**: February 2, 2026  
-**Current Phase**: Phase 2 - Ansible Automation (40% complete)  
-**Next Milestone**: Complete all Ansible roles and test base-hardening playbook
+**Date**: February 3, 2026  
+**Current Phase**: Phase 2 - Complete ✅  
+**Next Milestone**: Phase 3 - Prometheus + Grafana deployment
 
 ---
 
@@ -370,44 +407,50 @@ Overall: ████████░░░░░░░░░░░░░░░�
 
 ### Multi-Layered Security Approach
 
-#### 1. SSH Hardening
+#### 1. SSH Hardening ✅
 - ✅ **Key-based authentication only** (password authentication disabled)
 - ✅ **Root login disabled** via SSH
 - ✅ **Public key authentication** configured for sysadmin user
 - ✅ **MaxAuthTries**: Limited to 3 attempts
-- ✅ **Port**: Standard port 22 (can be changed in production)
+- ✅ **Automated via Ansible** (ssh_hardening role)
 
 **Configuration File**: `/etc/ssh/sshd_config`
 
-#### 2. Firewall (UFW - Uncomplicated Firewall)
+#### 2. Firewall (UFW) ✅
 - ✅ **Default Policy**: Deny incoming, Allow outgoing
-- ✅ **Allowed Services**:
-  - SSH (22/tcp) - from anywhere for management
-  - node_exporter (9100/tcp) - restricted to internal network only
-- ✅ **Enabled on boot**: Automatically starts with system
+- ✅ **Service-Specific Rules**:
+  - SSH (22/tcp) - Management access
+  - HTTP (80/tcp) - Web server only
+  - HTTPS (443/tcp) - Web server only
+  - App (3000/tcp) - From web server only
+  - PostgreSQL (5432/tcp) - From app server only
+  - node_exporter (9100/tcp) - Internal network only
+- ✅ **Automated via Ansible** (firewall role)
 
 **Check Status**: `sudo ufw status verbose`
 
-#### 3. Intrusion Prevention (fail2ban)
+#### 3. Intrusion Prevention (fail2ban) ✅
 - ✅ **Monitoring**: SSH login attempts
 - ✅ **Max Retries**: 3 failed attempts
 - ✅ **Ban Time**: 3600 seconds (1 hour)
 - ✅ **Find Time**: 600 seconds (10 minutes)
 - ✅ **Automatic IP banning** after threshold exceeded
+- ✅ **Automated via Ansible** (fail2ban role)
 
 **Configuration File**: `/etc/fail2ban/jail.local`  
 **Check Status**: `sudo fail2ban-client status sshd`
 
-#### 4. Automatic Security Updates
+#### 4. Automatic Security Updates ✅
 - ✅ **Service**: unattended-upgrades
 - ✅ **Update Type**: Security updates only
-- ✅ **Auto-reboot**: Disabled (manual control preferred)
+- ✅ **Auto-reboot**: Disabled (manual control)
 - ✅ **Old Kernel Cleanup**: Enabled
 - ✅ **Daily Update Check**: Automated
+- ✅ **Automated via Ansible** (auto_updates role)
 
 **Configuration File**: `/etc/apt/apt.conf.d/50unattended-upgrades`
 
-#### 5. System Monitoring
+#### 5. System Monitoring ✅
 - ✅ **Agent**: Prometheus node_exporter v1.8.2
 - ✅ **Metrics Port**: 9100
 - ✅ **Metrics Collected**:
@@ -416,15 +459,15 @@ Overall: ████████░░░░░░░░░░░░░░░�
   - Disk space and I/O
   - Network traffic and errors
   - System uptime and processes
+- ✅ **Automated via Ansible** (node_exporter role)
 
 **Access Metrics**: `curl http://localhost:9100/metrics`
 
-#### 6. Passwordless Sudo Configuration
-- ✅ **User**: sysadmin
-- ✅ **Configuration**: `/etc/sudoers.d/sysadmin`
-- ✅ **Permissions**: 0440 (read-only, validated)
-- ✅ **Purpose**: Required for Ansible automation
-- ✅ **Security Context**: Limited to key-based SSH access
+#### 6. Network Segmentation ✅
+- ✅ **Web Tier**: Internet-facing (ports 80, 443)
+- ✅ **App Tier**: Only accessible from web server
+- ✅ **Database Tier**: Only accessible from app server
+- ✅ **Management**: SSH restricted via firewall rules
 
 ---
 
@@ -437,10 +480,11 @@ Overall: ████████░░░░░░░░░░░░░░░�
 - **Kernel**: Linux 6.8.x
 
 ### Automation & Configuration Management
-- **Ansible**: 2.x (automation platform)
+- **Ansible**: 2.16+ (automation platform)
 - **YAML**: Configuration and playbook syntax
 - **Jinja2**: Template engine for dynamic configurations
 - **Git**: Version control
+- **GitHub**: Remote repository
 
 ### Security Tools
 - **OpenSSH**: Secure remote access
@@ -448,18 +492,22 @@ Overall: ████████░░░░░░░░░░░░░░░�
 - **fail2ban**: Intrusion prevention system
 - **unattended-upgrades**: Automatic security patching
 
+### Application Stack
+- **Nginx**: Reverse proxy and web server
+- **Node.js**: JavaScript runtime (v18.x)
+- **Express.js**: Web application framework
+- **PostgreSQL**: Relational database (v16)
+
 ### Monitoring & Observability
 - **Prometheus node_exporter**: Metrics collection agent
-- **Prometheus**: Time-series database (Phase 4)
-- **Grafana**: Visualization and dashboards (Phase 4)
+- **Prometheus**: Time-series database (Phase 3)
+- **Grafana**: Visualization and dashboards (Phase 3)
 
 ### Future Tech Stack (Upcoming Phases)
-- **Nginx**: Reverse proxy and web server
-- **Node.js / Python**: Application layer
-- **PostgreSQL**: Relational database
 - **rsyslog / ELK**: Centralized logging
 - **Bash**: Backup and maintenance scripts
 - **Cron**: Job scheduling
+- **Alertmanager**: Alert routing and notification
 
 ---
 
@@ -504,17 +552,43 @@ cd ~/infrastructure
 # Test connectivity to all managed nodes
 ansible managed_nodes -m ping
 
-# Apply base hardening configuration (when ready)
+# Apply complete infrastructure automation
 ansible-playbook playbooks/base-hardening.yml
 
-# Verify all configurations
-ansible-playbook playbooks/verify-config.yml
+# Deploy web server (Nginx)
+ansible-playbook playbooks/web-server.yml
 
-# Run in check mode (dry run)
+# Deploy application server (Node.js)
+ansible-playbook playbooks/app-server.yml
+
+# Deploy database server (PostgreSQL)
+ansible-playbook playbooks/db-server.yml
+
+# Verify all configurations and services
+ansible-playbook playbooks/verify-config.yml
+ansible-playbook playbooks/verify-all-services.yml
+
+# Run in check mode (dry run - no changes)
 ansible-playbook playbooks/base-hardening.yml --check
 
 # Run with verbose output for troubleshooting
 ansible-playbook playbooks/base-hardening.yml -vvv
+```
+
+#### Test the Application Stack
+
+```bash
+# From Windows, test the web server
+curl http://192.168.56.12
+
+# From control-node, test app server health
+ansible app_servers -m shell -a "curl -s http://localhost:3000/health"
+
+# Test database connectivity
+ansible app_servers -m shell -a 'PGPASSWORD=SecurePassword123\! psql -h 10.0.2.14 -U appuser -d appdb -c "SELECT version();"' -b
+
+# Test end-to-end flow (Web → App → Database)
+curl http://192.168.56.12/health
 ```
 
 ### Project Structure
@@ -522,47 +596,62 @@ ansible-playbook playbooks/base-hardening.yml -vvv
 ```
 infrastructure/
 │
-├── ansible.cfg                 # Ansible configuration file
-├── .gitignore                 # Git ignore file (secrets, keys)
-├── README.md                  # This file
+├── ansible.cfg                      # Ansible configuration file
+├── .gitignore                       # Git ignore rules (secrets, keys)
+├── README.md                        # This comprehensive documentation
 │
 ├── inventory/
-│   └── hosts.yml              # Server inventory (host definitions)
+│   └── hosts.yml                    # Server inventory with host groups
 │
 ├── group_vars/
-│   └── all.yml                # Global variables for all hosts
+│   └── all.yml                      # Global variables for all hosts
 │
-├── host_vars/                 # Host-specific variables (future)
-│   ├── web-server.yml
-│   ├── app-server.yml
-│   └── db-server.yml
+├── playbooks/                       # Ansible playbooks (automation scripts)
+│   ├── base-hardening.yml           # Security hardening for all servers
+│   ├── web-server.yml               # Nginx reverse proxy deployment
+│   ├── app-server.yml               # Node.js application deployment
+│   ├── db-server.yml                # PostgreSQL database deployment
+│   ├── verify-config.yml            # Individual service verification
+│   └── verify-all-services.yml      # End-to-end testing
 │
-├── playbooks/                 # Ansible playbooks
-│   ├── base-hardening.yml     # Main security hardening playbook
-│   ├── verify-config.yml      # Configuration verification
-│   ├── web-server.yml         # Web server deployment
-│   ├── app-server.yml         # Application deployment
-│   └── db-server.yml          # Database deployment
-│
-├── roles/                     # Ansible roles (reusable components)
-│   ├── ssh_hardening/         # SSH security configuration
-│   │   ├── tasks/
-│   │   ├── handlers/
+├── roles/                           # Ansible roles (reusable components)
+│   ├── ssh_hardening/               # SSH security configuration
+│   │   ├── tasks/main.yml           # Main tasks
+│   │   ├── handlers/main.yml        # Service handlers
+│   │   └── defaults/main.yml        # Default variables
+│   ├── firewall/                    # UFW firewall configuration
+│   │   ├── tasks/main.yml
+│   │   └── handlers/main.yml
+│   ├── fail2ban/                    # Intrusion prevention
+│   │   ├── tasks/main.yml
+│   │   ├── templates/jail.local.j2
+│   │   └── handlers/main.yml
+│   ├── auto_updates/                # Automatic security updates
+│   │   ├── tasks/main.yml
+│   │   └── templates/50unattended-upgrades.j2
+│   ├── node_exporter/               # Monitoring agent
+│   │   ├── tasks/main.yml
+│   │   ├── templates/node_exporter.service.j2
+│   │   └── handlers/main.yml
+│   ├── nginx/                       # Web server and reverse proxy
+│   │   ├── tasks/main.yml
 │   │   ├── templates/
-│   │   └── defaults/
-│   ├── firewall/              # UFW firewall configuration
-│   ├── fail2ban/              # Intrusion prevention
-│   ├── auto_updates/          # Automatic security updates
-│   ├── node_exporter/         # Monitoring agent
-│   ├── nginx/                 # Web server (Phase 3)
-│   ├── postgresql/            # Database (Phase 3)
-│   └── backup/                # Backup automation (Phase 6)
+│   │   │   ├── reverse-proxy.conf.j2
+│   │   │   └── security-headers.conf.j2
+│   │   └── handlers/main.yml
+│   ├── nodejs_app/                  # Node.js application
+│   │   ├── tasks/main.yml
+│   │   ├── templates/
+│   │   │   ├── app.js.j2
+│   │   │   ├── package.json.j2
+│   │   │   └── app.service.j2
+│   │   └── handlers/main.yml
+│   └── postgresql/                  # PostgreSQL database
+│       ├── tasks/main.yml
+│       └── handlers/main.yml
 │
-├── files/                     # Static files to copy to servers
-│   └── scripts/
-│
-└── templates/                 # Jinja2 templates for dynamic configs
-    └── *.j2
+└── files/                           # Static files (future use)
+    └── scripts/
 ```
 
 ---
@@ -829,31 +918,6 @@ ping -c 2 web-server
 sudo reboot
 ```
 
-#### Verification Commands
-
-```bash
-# Check all services
-sudo systemctl status ssh
-sudo systemctl status fail2ban
-sudo systemctl status node_exporter
-sudo systemctl status unattended-upgrades
-
-# Check firewall
-sudo ufw status verbose
-
-# Test connectivity
-ping -c 2 control-node
-ping -c 2 web-server
-ping -c 2 app-server
-ping -c 2 db-server
-ping -c 2 google.com
-
-# Check SSH to other VMs
-ssh sysadmin@web-server "hostname"
-ssh sysadmin@app-server "hostname"
-ssh sysadmin@db-server "hostname"
-```
-
 </details>
 
 ---
@@ -861,7 +925,7 @@ ssh sysadmin@db-server "hostname"
 ### Phase 2: Ansible Automation Commands
 
 <details>
-<summary><b>Click to expand Phase 2 commands (current phase)</b></summary>
+<summary><b>Click to expand Phase 2 commands</b></summary>
 
 #### Initial Setup on Control-Node
 
@@ -907,13 +971,8 @@ cat ~/.ssh/id_ed25519.pub
 
 # Copy SSH key to each managed node
 ssh-copy-id sysadmin@web-server
-# Type "yes" when prompted, enter password
-
 ssh-copy-id sysadmin@app-server
-# Type "yes" when prompted, enter password
-
 ssh-copy-id sysadmin@db-server
-# Type "yes" when prompted, enter password
 
 # Test passwordless SSH to each node
 ssh sysadmin@web-server "hostname"
@@ -1055,6 +1114,19 @@ node_exporter_port: 9100
 
 # Network configuration
 nat_network: "10.0.2.0/24"
+
+# Application configuration
+app_directory: /opt/myapp
+app_user: appuser
+app_service_name: myapp
+app_server_port: 3000
+app_server_ip: 10.0.2.13
+web_server_domain: localhost
+
+# Database configuration
+db_name: appdb
+db_user: appuser
+db_password: "SecurePassword123!"
 ```
 
 #### Test Ansible Connectivity
@@ -1079,121 +1151,103 @@ ansible managed_nodes -m command -a "sudo whoami"
 # Should return: root
 ```
 
-#### Git Repository Setup
+#### Create and Run Base Hardening Playbook
+
+```bash
+# Create the playbook
+nano playbooks/base-hardening.yml
+
+# Run in check mode (dry run)
+ansible-playbook playbooks/base-hardening.yml --check
+
+# Run for real
+ansible-playbook playbooks/base-hardening.yml
+
+# Test idempotency (run again - should show mostly "ok")
+ansible-playbook playbooks/base-hardening.yml
+```
+
+#### Deploy Service-Specific Playbooks
+
+```bash
+# Deploy web server (Nginx)
+ansible-playbook playbooks/web-server.yml
+
+# Deploy application server (Node.js)
+ansible-playbook playbooks/app-server.yml
+
+# Deploy database server (PostgreSQL)
+ansible-playbook playbooks/db-server.yml
+
+# Verify all services
+ansible-playbook playbooks/verify-all-services.yml
+```
+
+#### Manual Service Verification
+
+```bash
+# Check all services on web server
+ansible web_servers -m shell -a "systemctl is-active nginx ssh ufw fail2ban node_exporter"
+
+# Check all services on app server
+ansible app_servers -m shell -a "systemctl is-active myapp ssh ufw fail2ban node_exporter"
+
+# Check all services on database server
+ansible db_servers -m shell -a "systemctl is-active postgresql ssh ufw fail2ban node_exporter"
+
+# Test web server response
+ansible web_servers -m shell -a "curl -s http://localhost/"
+
+# Test app server health endpoint
+ansible app_servers -m shell -a "curl -s http://localhost:3000/health"
+
+# Test database connectivity from app server
+ansible app_servers -m shell -a 'PGPASSWORD=SecurePassword123\! psql -h 10.0.2.14 -U appuser -d appdb -c "SELECT version();"' -b
+
+# Check firewall rules on all servers
+ansible managed_nodes -m shell -a "sudo ufw status numbered"
+
+# Check fail2ban status
+ansible managed_nodes -m shell -a "sudo fail2ban-client status sshd"
+
+# Check node_exporter metrics
+ansible managed_nodes -m shell -a "curl -s http://localhost:9100/metrics | head -10"
+```
+
+#### Git Repository Setup and Commits
 
 ```bash
 cd ~/infrastructure
 
 # Create .gitignore
 nano .gitignore
-```
+# (Add appropriate ignore patterns)
 
-Paste this content:
-
-```gitignore
-# Ansible temporary files
-*.retry
-.ansible/
-/tmp/ansible_facts/
-
-# SSH keys (NEVER commit these!)
-*.pem
-*.key
-id_rsa
-id_rsa.pub
-id_ed25519
-id_ed25519.pub
-
-# Secrets and passwords
-*secret*
-*password*
-*.vault
-vault-pass.txt
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Editor files
-*.swp
-*.swo
-*~
-.vscode/
-.idea/
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-
-# Logs
-*.log
-```
-
-**Configure Git:**
-
-```bash
-# Set Git identity
-git config --global user.name "Skander Ba"
+# Configure Git
+git config --global user.name "Your Name"
 git config --global user.email "your-email@example.com"
 
-# Verify configuration
-git config --global --list
-```
-
-**Initialize Git and commit:**
-
-```bash
 # Initialize repository
 git init
 
-# Check status
-git status
-
-# Stage files (respects .gitignore)
+# Stage files
 git add .
 
 # Create initial commit
-git commit -m "Initial commit: Ansible infrastructure setup
+git commit -m "Initial commit: Ansible infrastructure setup"
 
-- Added Ansible configuration and inventory
-- Created directory structure for roles and playbooks
-- Added .gitignore for security"
+# Add GitHub remote
+git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
 
-# Add GitHub remote (replace with your repo URL)
-git remote add origin https://github.com/Skanderba8/linux-production-infrastructure.git
-
-# Verify remote
-git remote -v
-```
-
-**Merge with GitHub and push:**
-
-```bash
-# Configure merge strategy
-git config pull.rebase false
-
-# Pull existing content from GitHub
+# Pull and merge existing content
 git pull origin main --allow-unrelated-histories
-# If editor opens, save and exit (Ctrl+X, Y, Enter in nano)
-
-# Check status
-git status
-ls -la
 
 # Push to GitHub
 git push -u origin main
-# Enter GitHub username: Skanderba8
-# Enter Personal Access Token as password
-```
 
-**Future Git workflow:**
-
-```bash
-# After making changes
-git status
+# Future commits
 git add .
-git commit -m "Descriptive commit message"
+git commit -m "Descriptive message"
 git push
 ```
 
@@ -1213,10 +1267,10 @@ ansible managed_nodes -m shell -a "ps aux | grep ssh"
 ansible managed_nodes -m copy -a "src=/path/to/local/file dest=/path/on/remote"
 
 # Install a package on all nodes
-ansible managed_nodes -m apt -a "name=htop state=present"
+ansible managed_nodes -m apt -a "name=htop state=present" -b
 
 # Restart a service on all nodes
-ansible managed_nodes -m systemd -a "name=ssh state=restarted"
+ansible managed_nodes -m systemd -a "name=ssh state=restarted" -b
 
 # Gather facts about all nodes
 ansible managed_nodes -m setup
@@ -1348,6 +1402,26 @@ ansible-inventory --graph
 ansible-playbook playbook.yml --syntax-check
 ```
 
+#### Service-Specific Debugging
+
+```bash
+# Nginx
+sudo nginx -t                        # Test configuration
+sudo tail -f /var/log/nginx/error.log
+sudo tail -f /var/log/nginx/app-access.log
+
+# Node.js Application (myapp)
+sudo systemctl status myapp
+sudo journalctl -u myapp -f          # Follow logs
+curl http://localhost:3000/health    # Health check
+
+# PostgreSQL
+sudo systemctl status postgresql
+sudo -u postgres psql -c '\l'        # List databases
+sudo -u postgres psql appdb -c '\dt' # List tables
+sudo tail -f /var/log/postgresql/postgresql-16-main.log
+```
+
 #### System Performance
 
 ```bash
@@ -1426,6 +1500,7 @@ This project showcases a comprehensive set of skills valued in DevOps, Cloud Eng
 - Intrusion detection and prevention
 - Security patch management
 - Principle of least privilege
+- Network segmentation
 - Security auditing
 
 **Infrastructure as Code (IaC):**
@@ -1435,26 +1510,34 @@ This project showcases a comprehensive set of skills valued in DevOps, Cloud Eng
 - Template management (Jinja2)
 - Variable management
 - Inventory organization
+- Multi-tier application deployment
 
 **Automation & Scripting:**
 - Bash scripting
 - Ansible automation
-- Cron job scheduling
-- Automated deployment
 - Configuration management
+- Automated deployment
+- Service orchestration
+
+**Application Deployment:**
+- Reverse proxy configuration (Nginx)
+- Application server setup (Node.js/Express)
+- Database deployment (PostgreSQL)
+- Service integration
+- Health check implementation
 
 **Monitoring & Observability:**
-- Metrics collection (Prometheus)
-- Dashboard creation (Grafana)
-- Alert configuration
-- Log aggregation
-- Performance monitoring
+- Metrics collection (node_exporter)
+- Service monitoring
+- Performance tracking
+- Infrastructure readiness for Prometheus/Grafana
 
 **Version Control:**
 - Git workflow
 - Repository management
 - Commit best practices
 - Documentation maintenance
+- Change tracking
 
 **Networking:**
 - TCP/IP fundamentals
@@ -1462,6 +1545,7 @@ This project showcases a comprehensive set of skills valued in DevOps, Cloud Eng
 - Firewall rules
 - Port management
 - Network troubleshooting
+- Multi-network setup (NAT + Host-Only)
 
 ### Soft Skills
 
@@ -1470,28 +1554,38 @@ This project showcases a comprehensive set of skills valued in DevOps, Cloud Eng
 - Command references
 - Architecture diagrams
 - Troubleshooting guides
+- Progressive documentation
 
 **Problem Solving:**
 - Systematic debugging
 - Root cause analysis
 - Solution documentation
+- Iterative improvement
 
 **Project Management:**
 - Phase-based approach
 - Progress tracking
 - Time estimation
 - Milestone achievement
+- Scope management
 
 **Professional Development:**
 - Self-directed learning
 - Following best practices
 - Continuous improvement
+- Knowledge sharing
 
 ---
 
 ## 🔮 Future Enhancements
 
 Potential additions to expand the project:
+
+### Immediate Next Steps (Phase 3)
+- [ ] Prometheus deployment for metrics collection
+- [ ] Grafana dashboards for visualization
+- [ ] Alertmanager configuration
+- [ ] Custom alert rules
 
 ### Infrastructure Improvements
 - [ ] High Availability (HA) setup with keepalived
@@ -1506,6 +1600,7 @@ Potential additions to expand the project:
 - [ ] Web Application Firewall (ModSecurity)
 - [ ] Security scanning (Lynis, OpenVAS)
 - [ ] Compliance automation (CIS benchmarks)
+- [ ] Vulnerability scanning
 
 ### Monitoring & Alerting
 - [ ] APM (Application Performance Monitoring)
@@ -1513,6 +1608,7 @@ Potential additions to expand the project:
 - [ ] Custom metrics and exporters
 - [ ] PagerDuty/Slack integration
 - [ ] SLA monitoring
+- [ ] Log aggregation (ELK stack)
 
 ### CI/CD Pipeline
 - [ ] Jenkins/GitLab CI setup
@@ -1520,6 +1616,7 @@ Potential additions to expand the project:
 - [ ] Blue-green deployments
 - [ ] Canary releases
 - [ ] Rollback procedures
+- [ ] Pipeline automation
 
 ### Cloud Migration
 - [ ] Terraform for AWS/Azure/GCP
@@ -1559,6 +1656,11 @@ If you're building a similar project, here are helpful resources:
 - [DevOps Roadmap](https://roadmap.sh/devops)
 - [Kubernetes Documentation](https://kubernetes.io/docs/home/)
 
+**Prometheus & Grafana:**
+- [Prometheus Documentation](https://prometheus.io/docs/)
+- [Grafana Documentation](https://grafana.com/docs/)
+- [Node Exporter Guide](https://prometheus.io/docs/guides/node-exporter/)
+
 ---
 
 ## 📄 License
@@ -1574,7 +1676,7 @@ Feel free to use this project as a template or reference for your own learning!
 **Skander Ba**
 
 - 🌐 GitHub: [@Skanderba8](https://github.com/Skanderba8)
-- 📧 Email: [baskander5@gmail.com]
+- 📧 Email: baskander5@gmail.com
 - 💼 LinkedIn: [Skander Ben Abdallah](https://www.linkedin.com/in/skanderbena5/)
 - 🌟 Portfolio: [Website](http://skander-portfolio-bucket2026.s3-website-eu-west-1.amazonaws.com/)
 
@@ -1593,6 +1695,7 @@ Feel free to use this project as a template or reference for your own learning!
 Special thanks to:
 - The Ansible community for excellent documentation
 - The Linux community for amazing tools and support
+- The Prometheus and Grafana teams for outstanding monitoring tools
 - Everyone who provides feedback and suggestions
 
 ---
@@ -1600,10 +1703,13 @@ Special thanks to:
 ## 📈 Project Stats
 
 - **Started**: January 30, 2026
-- **Current Status**: Phase 2 (40% complete)
+- **Phase 1 Complete**: January 31, 2026
+- **Phase 2 Complete**: February 3, 2026
+- **Current Status**: Phase 2 Complete - Ready for Phase 3
 - **Total Commits**: Check GitHub for latest count
-- **Lines of Configuration**: ~500+ (growing)
+- **Lines of Ansible Code**: ~1,200+
 - **Documentation Pages**: 1 (comprehensive README)
+- **Services Deployed**: 3-tier application stack (Web/App/Database)
 
 ---
 
@@ -1613,17 +1719,41 @@ Special thanks to:
 - ✅ **2026-01-31**: Phase 1 complete - All VMs configured manually
 - ✅ **2026-02-02**: Ansible installed, SSH keys distributed, passwordless sudo configured
 - ✅ **2026-02-02**: Git repository initialized and pushed to GitHub
-- 🎯 **Next**: Complete all Ansible roles for base hardening
+- ✅ **2026-02-02**: Created all base security hardening roles
+- ✅ **2026-02-02**: Base-hardening playbook tested and verified
+- ✅ **2026-02-03**: Web server (Nginx) deployed successfully
+- ✅ **2026-02-03**: Application server (Node.js) deployed successfully
+- ✅ **2026-02-03**: Database server (PostgreSQL) deployed successfully
+- ✅ **2026-02-03**: Phase 2 COMPLETE - Full automation verified
+- 🎯 **Next**: Phase 3 - Deploy Prometheus + Grafana monitoring
 
 ---
 
-**Last Updated**: February 2, 2026  
-**README Version**: 2.0  
+## 📊 Infrastructure Health Status
+
+**Last Verified**: February 3, 2026
+
+| Component | Status | Health Check |
+|-----------|--------|--------------|
+| Web Server (Nginx) | 🟢 Running | ✓ HTTP responding |
+| App Server (Node.js) | 🟢 Running | ✓ Health endpoint OK |
+| Database (PostgreSQL) | 🟢 Running | ✓ Accepting connections |
+| SSH Security | 🟢 Active | ✓ Key-only auth |
+| Firewall (UFW) | 🟢 Active | ✓ Rules enforced |
+| fail2ban | 🟢 Active | ✓ Monitoring SSH |
+| Auto Updates | 🟢 Configured | ✓ Security patches enabled |
+| Monitoring (node_exporter) | 🟢 Running | ✓ Metrics available |
+| End-to-End Connectivity | 🟢 Verified | ✓ Web→App→DB working |
+
+---
+
+**Last Updated**: February 3, 2026  
+**README Version**: 3.0  
 **Status**: Living Document - Updated as project progresses
 
 ---
 
-*This project is actively being developed. Check back for updates!*
+*Phase 2 is complete! Infrastructure is fully automated and production-ready. Next: Implement centralized monitoring with Prometheus and Grafana.*
 
 ---
 
