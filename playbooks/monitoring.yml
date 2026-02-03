@@ -1,0 +1,53 @@
+---
+- name: Deploy Monitoring Stack on Control Node
+  hosts: control-node
+  become: yes
+  gather_facts: yes
+  
+  # Set the variable at play level
+  vars:
+    prometheus_targets:
+      - name: "control-node"
+        hostname: "control-node"
+        ip: "10.0.2.11"
+        port: "9100"
+        role: "control"
+      - name: "web-server"
+        hostname: "web-server"
+        ip: "10.0.2.12"
+        port: "9100"
+        role: "web"
+      - name: "app-server"
+        hostname: "app-server"
+        ip: "10.0.2.13"
+        port: "9100"
+        role: "app"
+      - name: "db-server"
+        hostname: "db-server"
+        ip: "10.0.2.14"
+        port: "9100"
+        role: "db"
+  
+  tasks:
+    - name: Include Prometheus role
+      include_role:
+        name: prometheus
+
+    - name: Include Grafana role
+      include_role:
+        name: grafana
+
+    - name: Display completion message
+      debug:
+        msg: |
+          Monitoring stack deployed!
+          
+          Access Prometheus: http://{{ ansible_default_ipv4.address }}:9090
+          Access Grafana:     http://{{ ansible_default_ipv4.address }}:3001
+          Grafana username: admin
+          Grafana password: admin123!
+          
+          Prometheus is scraping:
+          {% for target in prometheus_targets %}
+            - {{ target.name }} ({{ target.ip }}:{{ target.port }})
+          {% endfor %}

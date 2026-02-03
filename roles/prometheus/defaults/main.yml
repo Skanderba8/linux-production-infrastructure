@@ -1,0 +1,12 @@
+---
+# Prometheus default variables
+prometheus_version: "2.51.2"
+prometheus_port: 9090
+prometheus_data_dir: /var/lib/prometheus
+prometheus_config_dir: /etc/prometheus
+prometheus_user: prometheus
+prometheus_group: prometheus
+prometheus_scrape_interval: "15s"
+prometheus_evaluation_interval: "15s"
+prometheus_retention_days: 15
+prometheus_download_url: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"

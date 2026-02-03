@@ -1,0 +1,112 @@
+---
+# prometheus/tasks/main.yml
+
+- name: Ensure system prerequisites
+  apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: yes
+  loop:
+    - wget
+    - tar
+
+- name: Create Prometheus system user and group
+  user:
+    name: "{{ prometheus_user }}"
+    system: yes
+    shell: /usr/sbin/nologin
+    create_home: no
+    comment: "Prometheus Monitoring System"
+
+- name: Create Prometheus directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: '0755'
+  loop:
+    - "{{ prometheus_data_dir }}"
+    - "{{ prometheus_config_dir }}"
+    - "{{ prometheus_config_dir }}/rules"
+
+- name: Download Prometheus
+  get_url:
+    url: "{{ prometheus_download_url }}"
+    dest: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    mode: '0644'
+
+- name: Extract Prometheus archive
+  unarchive:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    dest: "/tmp/"
+    remote_src: yes
+    creates: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/prometheus"
+
+- name: Install Prometheus binaries
+  copy:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/{{ item }}"
+    dest: "/usr/local/bin/{{ item }}"
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: '0755'
+  loop:
+    - prometheus
+    - promtool
+
+- name: Create Prometheus configuration template
+  template:
+    src: prometheus.yml.j2
+    dest: "{{ prometheus_config_dir }}/prometheus.yml"
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: '0644'
+  notify:
+    - restart prometheus
+
+- name: Create systemd service file
+  template:
+    src: prometheus.service.j2
+    dest: /etc/systemd/system/prometheus.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - reload systemd
+    - restart prometheus
+
+- name: Create data directory with correct permissions
+  file:
+    path: "{{ prometheus_data_dir }}"
+    state: directory
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: '0755'
+    recurse: yes
+
+- name: Configure firewall for Prometheus
+  ufw:
+    rule: allow
+    port: "{{ prometheus_port }}"
+    src: "{{ host_network | default('192.168.56.0/24') }}"
+  when: ufw_default_incoming | default(true)
+
+- name: Start and enable Prometheus service
+  systemd:
+    name: prometheus
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: Verify Prometheus is running
+  uri:
+    url: "http://localhost:{{ prometheus_port }}/-/healthy"
+    return_content: yes
+  register: prometheus_health
+  until: prometheus_health.status == 200
+  retries: 10
+  delay: 2
+
+- name: Display Prometheus status
+  debug:
+    msg: "Prometheus is running and healthy. Access at http://{{ ansible_default_ipv4.address }}:{{ prometheus_port }}"

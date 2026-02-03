@@ -1,0 +1,63 @@
+---
+# playbooks/verify-monitoring.yml
+
+- name: Verify Monitoring Stack
+  hosts: control-node
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: Check if Prometheus is running
+      systemd:
+        name: prometheus
+        enabled: yes
+      register: prometheus_service
+
+    - name: Check if Grafana is running
+      systemd:
+        name: grafana-server
+        enabled: yes
+      register: grafana_service
+
+    - name: Verify Prometheus web interface
+      uri:
+        url: "http://localhost:{{ prometheus_port }}/api/v1/status/config"
+        return_content: yes
+      register: prometheus_api
+      ignore_errors: yes
+
+    - name: Verify Grafana web interface
+      uri:
+        url: "http://localhost:{{ grafana_port }}/api/health"
+        return_content: yes
+      register: grafana_api
+      ignore_errors: yes
+
+    - name: Check Prometheus targets status
+      shell: |
+        curl -s http://localhost:{{ prometheus_port }}/api/v1/targets | \
+        python3 -c "import sys, json; data=json.load(sys.stdin); \
+        targets=data['data']['activeTargets']; \
+        for t in targets: print(f\"{t['labels']['instance']}: {t['health']}\")"
+      register: prometheus_targets
+      changed_when: false
+
+    - name: Display verification results
+      debug:
+        msg: |
+          === MONITORING STACK VERIFICATION ===
+          
+          Services:
+          - Prometheus: {{ 'RUNNING' if prometheus_service is succeeded else 'FAILED' }}
+          - Grafana:    {{ 'RUNNING' if grafana_service is succeeded else 'FAILED' }}
+          
+          Web Interfaces:
+          - Prometheus API: {{ 'ACCESSIBLE' if prometheus_api.status == 200 else 'INACCESSIBLE' }}
+          - Grafana API:    {{ 'ACCESSIBLE' if grafana_api.status == 200 else 'INACCESSIBLE' }}
+          
+          Prometheus Targets:
+          {{ prometheus_targets.stdout }}
+          
+          URLs:
+          - Prometheus: http://{{ ansible_default_ipv4.address }}:{{ prometheus_port }}
+          - Grafana:    http://{{ ansible_default_ipv4.address }}:{{ grafana_port }}

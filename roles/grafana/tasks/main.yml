@@ -1,0 +1,88 @@
+---
+# grafana/tasks/main.yml
+
+- name: Install prerequisites
+  apt:
+    name:
+      - apt-transport-https
+      - software-properties-common
+      - wget
+    state: present
+    update_cache: yes
+
+- name: Download Grafana GPG key
+  get_url:
+    url: https://apt.grafana.com/gpg.key
+    dest: /etc/apt/keyrings/grafana.asc
+    mode: '0644'
+
+- name: Add Grafana repository
+  apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/grafana.asc] https://apt.grafana.com stable main"
+    state: present
+    update_cache: yes
+
+- name: Install Grafana
+  apt:
+    name: grafana
+    state: present
+
+- name: Create Grafana directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: grafana
+    group: grafana
+    mode: '0755'
+  loop:
+    - "{{ grafana_data_dir }}"
+    - "{{ grafana_log_dir }}"
+    - /etc/grafana/provisioning/datasources
+
+- name: Configure Grafana
+  template:
+    src: grafana.ini.j2
+    dest: /etc/grafana/grafana.ini
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - restart grafana
+
+- name: Create Prometheus datasource configuration
+  template:
+    src: prometheus-datasource.yml.j2
+    dest: /etc/grafana/provisioning/datasources/prometheus.yml
+    owner: grafana
+    group: grafana
+    mode: '0644'
+  notify:
+    - restart grafana
+
+- name: Configure firewall for Grafana
+  ufw:
+    rule: allow
+    port: "{{ grafana_port }}"
+    src: "192.168.56.0/24"
+
+- name: Start and enable Grafana service
+  systemd:
+    name: grafana-server
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: Wait for Grafana to start
+  wait_for:
+    port: "{{ grafana_port }}"
+    delay: 5
+    timeout: 60
+
+- name: Display Grafana access information
+  debug:
+    msg: |
+      Grafana is running!
+      URL: http://{{ ansible_default_ipv4.address }}:{{ grafana_port }}
+      Username: {{ grafana_admin_user }}
+      Password: {{ grafana_admin_password }}
+      Default password is admin/admin - change it after first login

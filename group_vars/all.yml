@@ -39,3 +39,43 @@ web_server_domain: localhost
 db_name: appdb
 db_user: appuser
 db_password: "SecurePassword123!"  # Change this in production!
+
+# Prometheus Configuration
+prometheus_version: "2.51.2"
+prometheus_port: 9090
+prometheus_data_dir: /var/lib/prometheus
+prometheus_user: prometheus
+prometheus_group: prometheus
+prometheus_scrape_interval: 15s
+prometheus_evaluation_interval: 15s
+prometheus_retention_days: 15
+
+# Prometheus Targets
+prometheus_targets:
+  - name: "control-node"
+    hostname: "control-node"
+    ip: "10.0.2.11"
+    port: "9100"
+    role: "control"
+  - name: "web-server"
+    hostname: "web-server"
+    ip: "10.0.2.12"
+    port: "9100"
+    role: "web"
+  - name: "app-server"
+    hostname: "app-server"
+    ip: "10.0.2.13"
+    port: "9100"
+    role: "app"
+  - name: "db-server"
+    hostname: "db-server"
+    ip: "10.0.2.14"
+    port: "9100"
+    role: "db"
+
+# Grafana Configuration
+grafana_version: "11.3.1"
+grafana_port: 3001
+grafana_admin_user: admin
+grafana_admin_password: "admin123!"  # Change this for production!
+grafana_data_dir: /var/lib/grafana

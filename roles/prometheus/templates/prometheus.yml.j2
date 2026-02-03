@@ -1,0 +1,36 @@
+global:
+  scrape_interval: {{ prometheus_scrape_interval }}
+  evaluation_interval: {{ prometheus_evaluation_interval }}
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          role: 'prometheus'
+          hostname: '{{ ansible_hostname }}'
+
+  # Node exporters on all servers
+  - job_name: 'node'
+    static_configs:
+      - targets: ['10.0.2.11:9100']
+        labels:
+          role: 'control'
+          hostname: 'control-node'
+          instance: 'control-node'
+      - targets: ['10.0.2.12:9100']
+        labels:
+          role: 'web'
+          hostname: 'web-server'
+          instance: 'web-server'
+      - targets: ['10.0.2.13:9100']
+        labels:
+          role: 'app'
+          hostname: 'app-server'
+          instance: 'app-server'
+      - targets: ['10.0.2.14:9100']
+        labels:
+          role: 'db'
+          hostname: 'db-server'
+          instance: 'db-server'

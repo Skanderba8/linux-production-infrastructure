@@ -1,0 +1,8 @@
+---
+# grafana/handlers/main.yml
+
+- name: restart grafana
+  systemd:
+    name: grafana-server
+    state: restarted
+    enabled: yes
