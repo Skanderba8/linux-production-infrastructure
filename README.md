@@ -311,48 +311,161 @@ Security: Each tier only accepts connections from the previous tier
 **Objective**: Implement centralized log management with rsyslog or ELK stack
 <img width="1580" height="798" alt="backup1" src="https://github.com/user-attachments/assets/e6ed6aa7-39c6-41c8-b453-d5db0cf2ae2d" />
 
-**Planned Tasks**:
-- [ ] Set up centralized log server
-- [ ] Configure rsyslog on all VMs to forward logs
-- [ ] Implement log rotation policies
-- [ ] Create log parsing rules
-- [ ] Set up log-based alerts
-- [ ] Create logging playbook
-- [ ] Test log forwarding
-- [ ] Document logging architecture
+**Tasks Completed**:
 
-**Deliverables**:
-- Centralized log collection system
-- Log retention policies
-- Log analysis capabilities
+#### Step 4.1: Log Server Setup ✅
+- [x] Created `rsyslog_server` role for control-node
+- [x] Configured rsyslog to receive logs on port 514 (UDP/TCP)
+- [x] Set up log file organization by hostname
+- [x] Configured firewall to allow syslog traffic from internal network
+- [x] Created log directory structure in /var/log/remote/
 
-**Estimated Time**: 5-7 hours
+#### Step 4.2: Log Client Configuration ✅
+- [x] Created `rsyslog_client` role for managed nodes
+- [x] Configured all managed nodes to forward logs to control-node
+- [x] Set up reliable log forwarding with queue management
+- [x] Tested log forwarding from all 3 servers
+
+#### Step 4.3: Log Management ✅
+- [x] Implemented log rotation policies
+- [x] Configured retention: daily logs, weekly archives
+- [x] Set up automatic compression of old logs
+- [x] Created logrotate configuration for remote logs
+
+#### Step 4.4: Testing and Verification ✅
+- [x] Created `logging.yml` playbook for deployment
+- [x] Created `verify-logging.yml` for validation
+- [x] Tested log forwarding from all managed nodes
+- [x] Verified centralized log collection
+- [x] Confirmed log rotation is working
+
+**Deliverables Completed**:
+- ✅ Centralized log server on control-node
+- ✅ Log forwarding from all managed nodes
+- ✅ 2 new Ansible roles (rsyslog_server, rsyslog_client)
+- ✅ 2 new playbooks for logging infrastructure
+- ✅ Automated log rotation and retention
+- ✅ Organized log directory structure
+
+**Log Structure**:
+```
+/var/log/remote/
+├── web-server/
+│   └── syslog
+├── app-server/
+│   └── syslog
+└── db-server/
+    └── syslog
+```
+
+**Time Invested**: ~2 hours  
+**Status**: ✅ 100% Complete
 
 ---
 
-### Phase 5: Backup Automation ⏸️ PENDING
-**Objective**: Implement automated backup and retention policies
+### Phase 5: Backup Automation ✅ COMPLETE
+**Objective**: Implement automated backup system for critical data
 
-**Planned Tasks**:
-- [ ] Create backup scripts for each service
-- [ ] Implement database backup automation
-- [ ] Set up backup retention policies
-- [ ] Configure backup to remote location (simulated S3/NFS)
-- [ ] Create cron jobs for scheduled backups
-- [ ] Implement backup verification
-- [ ] Create backup playbook
-- [ ] Test backup procedures
-- [ ] Document backup strategy
+**Tasks Completed**:
 
-**Deliverables**:
-- Automated backup system
-- Backup verification scripts
-- Retention policies
-- Backup documentation
+#### Step 5.1: Backup Strategy Design ✅
+- [x] Designed multi-tier backup retention strategy
+- [x] Defined backup types: database and configuration
+- [x] Established retention periods:
+  - Daily: 7 days
+  - Weekly: 28 days
+  - Monthly: 90 days
 
-**Estimated Time**: 5-7 hours
+#### Step 5.2: Database Backup Implementation ✅
+- [x] Created `backup_postgresql` role
+- [x] Implemented PostgreSQL backup script with pg_dump
+- [x] Configured compression (gzip) for space efficiency
+- [x] Set up automated retention management
+- [x] Created cron job for daily execution (2:00 AM)
+- [x] Deployed to db-server
+
+#### Step 5.3: Configuration Backup Implementation ✅
+- [x] Created `backup_configs` role
+- [x] Implemented backup script for system configurations:
+  - Nginx configurations
+  - Application code
+  - SSH configurations
+  - Firewall rules
+  - fail2ban settings
+  - rsyslog configurations
+  - Ansible infrastructure files
+- [x] Configured compression and retention
+- [x] Created cron job for daily execution (3:00 AM)
+- [x] Deployed to web-server and app-server
+
+#### Step 5.4: Backup Deployment and Testing ✅
+- [x] Created `backup.yml` playbook
+- [x] Fixed YAML syntax errors in backup roles
+- [x] Deployed backup system to all servers
+- [x] Created backup directories on all nodes
+- [x] Verified backup scripts are executable
+- [x] Tested manual backup execution
+- [x] Confirmed cron jobs are scheduled
+- [x] Validated backup files are created with content
+
+**Deliverables Completed**:
+- ✅ Automated database backups (PostgreSQL on db-server)
+- ✅ Automated configuration backups (web-server, app-server)
+- ✅ 2 new Ansible roles (backup_postgresql, backup_configs)
+- ✅ 1 new playbook for backup deployment
+- ✅ Multi-tier retention policy (7/28/90 days)
+- ✅ Scheduled cron jobs for automation
+- ✅ Backup verification capability
+
+**Backup Architecture**:
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Backup Strategy                       │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│  db-server (10.0.2.14)                                  │
+│  ├── /var/backups/database/                             │
+│  │   ├── daily/    (7 days retention)                   │
+│  │   ├── weekly/   (28 days retention)                  │
+│  │   └── monthly/  (90 days retention)                  │
+│  └── Cron: Daily at 2:00 AM                             │
+│                                                          │
+│  web-server (10.0.2.12)                                 │
+│  ├── /var/backups/configs/                              │
+│  │   ├── daily/    (7 days retention)                   │
+│  │   ├── weekly/   (28 days retention)                  │
+│  │   └── monthly/  (90 days retention)                  │
+│  └── Cron: Daily at 3:00 AM                             │
+│                                                          │
+│  app-server (10.0.2.13)                                 │
+│  ├── /var/backups/configs/                              │
+│  │   ├── daily/    (7 days retention)                   │
+│  │   ├── weekly/   (28 days retention)                  │
+│  │   └── monthly/  (90 days retention)                  │
+│  └── Cron: Daily at 3:00 AM                             │
+│                                                          │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Backup Components**:
+
+**1. Database Backups (db-server)**:
+- Full PostgreSQL database dump (appdb)
+- Backup location: `/var/backups/database/`
+- Schedule: Daily at 2:00 AM
+- Manual execution: `sudo /usr/local/bin/backup-database.sh`
+
+**2. Configuration Backups (web-server, app-server)**:
+- System and application configurations
+- Backup location: `/var/backups/configs/`
+- Schedule: Daily at 3:00 AM
+- Manual execution: `sudo /usr/local/bin/backup-configs.sh`
+
+**Time Invested**: ~2 hours  
+**Status**: ✅ 100% Complete
 
 ---
+
 
 ### Phase 6: Disaster Recovery ⏸️ PENDING
 **Objective**: Develop and test disaster recovery procedures
@@ -410,8 +523,8 @@ Security: Each tier only accepts connections from the previous tier
 Phase 1: ████████████████████████████████ 100% ✅ COMPLETE
 Phase 2: ████████████████████████████████ 100% ✅ COMPLETE
 Phase 3: ████████████████████████████████ 100% ✅ COMPLETE
-Phase 4: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0% ⏸️  PENDING
-Phase 5: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0% ⏸️  PENDING
+Phase 4: ████████████████████████████████ 100% ✅ COMPLETE
+Phase 5: ████████████████████████████████ 100% ✅ COMPLETE
 Phase 6: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0% ⏸️  PENDING
 Phase 7: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0% ⏸️  PENDING
 ═══════════════════════════════════════════════════════════
@@ -479,13 +592,14 @@ Overall: ███████████████████████�
 - **Phase 1**: 4 hours ✅
 - **Phase 2**: 11 hours ✅
 - **Phase 3**: 6 hours ✅
-- **Total so far**: 21 hours
-- **Estimated remaining**: 27-35 hours
+- **Phase 4**: 2 hours ✅
+- **Phase 5**: 6 hours ✅
+- **Total so far**: 25 hours
+- **Estimated remaining**: 15-20 hours
 
 ### Last Updated
-**Date**: February 3, 2026  
-**Current Phase**: Phase 3 - Complete ✅  
-**Next Milestone**: Phase 4 - Centralized logging implementation
+**Date**: February73, 2026  
+**Current Phase**: Phase 4-5 - Complete ✅  
 
 ---
 
@@ -511,6 +625,7 @@ Overall: ███████████████████████�
   - App (3000/tcp) - From web server only
   - PostgreSQL (5432/tcp) - From app server only
   - node_exporter (9100/tcp) - Internal network only
+  - Syslog (514/udp, 514/tcp) - Internal network only
 - ✅ **Automated via Ansible** (firewall role)
 
 **Check Status**: `sudo ufw status verbose`
@@ -586,18 +701,17 @@ Overall: ███████████████████████�
 
 ### Monitoring & Observability
 - **Prometheus node_exporter**: Metrics collection agent (v1.8.2)
-- **Prometheus**: Time-series database and alerting (v3.9.1) ✅
-- **Grafana**: Visualization and dashboards (v12.3.2) ✅
-- **Working Dashboards**: CPU, Memory, Disk, Network monitoring ✅
+- **Prometheus**: Time-series database and alerting (v3.9.1)
+- **Grafana**: Visualization and dashboards (v12.3.2)
 
-### Future Tech Stack (Upcoming Phases)
-- **rsyslog / ELK**: Centralized logging
+### Logging & Backup
+- **rsyslog**: Centralized log management
+- **logrotate**: Log rotation and retention
+- **pg_dump**: PostgreSQL backup utility
+- **cron**: Job scheduling for automated backups
 - **Bash**: Backup and maintenance scripts
-- **Cron**: Job scheduling
-- **Alertmanager**: Alert routing and notification
 
 ---
-
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -612,7 +726,6 @@ Overall: ███████████████████████�
 ### Access the Infrastructure
 
 #### SSH from Windows (PowerShell)
-
 ```powershell
 # Access Ansible control node
 ssh sysadmin@192.168.56.11
@@ -628,7 +741,6 @@ ssh sysadmin@192.168.56.14
 ```
 
 #### Run Ansible Playbooks (from control-node)
-
 ```bash
 # SSH into control node
 ssh sysadmin@192.168.56.11
@@ -654,10 +766,17 @@ ansible-playbook playbooks/db-server.yml
 # Deploy monitoring stack (Prometheus + Grafana)
 ansible-playbook playbooks/monitoring.yml
 
+# Deploy centralized logging
+ansible-playbook playbooks/logging.yml
+
+# Deploy backup system
+ansible-playbook playbooks/backup.yml
+
 # Verify all configurations and services
 ansible-playbook playbooks/verify-config.yml
 ansible-playbook playbooks/verify-all-services.yml
 ansible-playbook playbooks/verify-monitoring.yml
+ansible-playbook playbooks/verify-logging.yml
 
 # Run in check mode (dry run - no changes)
 ansible-playbook playbooks/base-hardening.yml --check
@@ -667,7 +786,6 @@ ansible-playbook playbooks/base-hardening.yml -vvv
 ```
 
 #### Access Monitoring Dashboards
-
 ```bash
 # From Windows browser:
 # Prometheus: http://192.168.56.11:9090
@@ -678,8 +796,45 @@ ansible-playbook playbooks/base-hardening.yml -vvv
 #   Password: admin123!
 ```
 
-#### Test the Application Stack
+#### Check Centralized Logs
+```bash
+# From control-node, view centralized logs
+# Web server logs
+sudo tail -f /var/log/remote/web-server/syslog
 
+# App server logs
+sudo tail -f /var/log/remote/app-server/syslog
+
+# Database server logs
+sudo tail -f /var/log/remote/db-server/syslog
+
+# View all logs
+sudo ls -lh /var/log/remote/*/
+```
+
+#### Verify Backups
+```bash
+# Check backup directories exist
+ansible all -m shell -a "ls -lh /var/backups/" -b
+
+# Check database backup files
+ansible db_servers -m shell -a "ls -lh /var/backups/database/daily/" -b
+
+# Check configuration backup files
+ansible managed_nodes -m shell -a "ls -lh /var/backups/configs/daily/" -b
+
+# Verify cron jobs are scheduled
+ansible all -m shell -a "crontab -l 2>/dev/null | grep backup || echo 'No backup cron jobs'" -b
+
+# Manually trigger a test backup
+# Database backup
+ansible db_servers -m shell -a "/usr/local/bin/backup-database.sh" -b
+
+# Configuration backup
+ansible web_servers -m shell -a "/usr/local/bin/backup-configs.sh" -b
+```
+
+#### Test the Application Stack
 ```bash
 # From Windows, test the web server
 curl http://192.168.56.12
@@ -695,7 +850,6 @@ curl http://192.168.56.12/health
 ```
 
 ### Project Structure
-
 ```
 infrastructure/
 │
@@ -716,59 +870,28 @@ infrastructure/
 │   ├── db-server.yml                # PostgreSQL database deployment
 │   ├── verify-config.yml            # Individual service verification
 │   ├── verify-all-services.yml      # End-to-end testing
-│   ├── monitoring.yml               # 📊 Monitoring stack deployment
-│   ├── verify-monitoring.yml        # 📊 Monitoring validation
-│   └── open-monitoring-ports.yml    # 📊 Firewall for monitoring
+│   ├── monitoring.yml               # Monitoring stack deployment
+│   ├── verify-monitoring.yml        # Monitoring validation
+│   ├── open-monitoring-ports.yml    # Firewall for monitoring
+│   ├── logging.yml                  # 📋 Centralized logging deployment
+│   ├── verify-logging.yml           # 📋 Logging validation
+│   └── backup.yml                   # 💾 Backup system deployment
 │
 ├── roles/                           # Ansible roles (reusable components)
 │   ├── ssh_hardening/               # SSH security configuration
-│   │   ├── tasks/main.yml           # Main tasks
-│   │   ├── handlers/main.yml        # Service handlers
-│   │   └── defaults/main.yml        # Default variables
 │   ├── firewall/                    # UFW firewall configuration
-│   │   ├── tasks/main.yml
-│   │   └── handlers/main.yml
 │   ├── fail2ban/                    # Intrusion prevention
-│   │   ├── tasks/main.yml
-│   │   ├── templates/jail.local.j2
-│   │   └── handlers/main.yml
 │   ├── auto_updates/                # Automatic security updates
-│   │   ├── tasks/main.yml
-│   │   └── templates/50unattended-upgrades.j2
 │   ├── node_exporter/               # Monitoring agent
-│   │   ├── tasks/main.yml
-│   │   ├── templates/node_exporter.service.j2
-│   │   └── handlers/main.yml
 │   ├── nginx/                       # Web server and reverse proxy
-│   │   ├── tasks/main.yml
-│   │   ├── templates/
-│   │   │   ├── reverse-proxy.conf.j2
-│   │   │   └── security-headers.conf.j2
-│   │   └── handlers/main.yml
 │   ├── nodejs_app/                  # Node.js application
-│   │   ├── tasks/main.yml
-│   │   ├── templates/
-│   │   │   ├── app.js.j2
-│   │   │   ├── package.json.j2
-│   │   │   └── app.service.j2
-│   │   └── handlers/main.yml
 │   ├── postgresql/                  # PostgreSQL database
-│   │   ├── tasks/main.yml
-│   │   └── handlers/main.yml
-│   ├── prometheus/                  # 📊 Prometheus monitoring
-│   │   ├── tasks/main.yml
-│   │   ├── templates/
-│   │   │   ├── prometheus.yml.j2
-│   │   │   └── prometheus.service.j2
-│   │   ├── handlers/main.yml
-│   │   └── defaults/main.yml
-│   └── grafana/                     # 📊 Grafana visualization
-│       ├── tasks/main.yml
-│       ├── templates/
-│       │   ├── grafana.ini.j2
-│       │   └── prometheus-datasource.yml.j2
-│       ├── handlers/main.yml
-│       └── defaults/main.yml
+│   ├── prometheus/                  # Prometheus monitoring
+│   ├── grafana/                     # Grafana visualization
+│   ├── rsyslog_server/              # 📋 Centralized log server
+│   ├── rsyslog_client/              # 📋 Log forwarding client
+│   ├── backup_postgresql/           # 💾 Database backup automation
+│   └── backup_configs/              # 💾 Configuration backup automation
 │
 └── files/                           # Static files (future use)
     └── scripts/
@@ -784,7 +907,6 @@ infrastructure/
 <summary><b>Click to expand Phase 1 commands</b></summary>
 
 #### Initial Network Configuration (baseline-template)
-
 ```bash
 # Set static IP on NAT Network (enp0s3)
 sudo nmcli connection modify "Wired connection 1" \
@@ -811,7 +933,6 @@ ip route show
 ```
 
 #### Hostname Configuration
-
 ```bash
 # Set hostname
 sudo hostnamectl set-hostname baseline-template
@@ -826,7 +947,6 @@ hostnamectl
 ```
 
 #### System Updates
-
 ```bash
 # Update package lists
 sudo apt update
@@ -842,7 +962,6 @@ sudo reboot
 ```
 
 #### SSH Configuration
-
 ```bash
 # Install OpenSSH server (usually pre-installed)
 sudo apt install -y openssh-server
@@ -882,7 +1001,6 @@ sudo systemctl status ssh
 ```
 
 #### Firewall (UFW) Configuration
-
 ```bash
 # Set default policies
 sudo ufw default deny incoming
@@ -900,7 +1018,6 @@ sudo ufw status numbered
 ```
 
 #### fail2ban Installation and Configuration
-
 ```bash
 # Install fail2ban
 sudo apt install -y fail2ban
@@ -928,7 +1045,6 @@ sudo fail2ban-client status sshd
 ```
 
 #### Automatic Security Updates
-
 ```bash
 # Install unattended-upgrades
 sudo apt install -y unattended-upgrades apt-listchanges
@@ -950,7 +1066,6 @@ sudo systemctl status unattended-upgrades
 ```
 
 #### node_exporter Installation
-
 ```bash
 # Download node_exporter
 cd /tmp
@@ -970,19 +1085,7 @@ sudo chown node_exporter:node_exporter /usr/local/bin/node_exporter
 
 # Create systemd service
 sudo nano /etc/systemd/system/node_exporter.service
-# Paste service configuration:
-# [Unit]
-# Description=Node Exporter
-# After=network.target
-#
-# [Service]
-# User=node_exporter
-# Group=node_exporter
-# Type=simple
-# ExecStart=/usr/local/bin/node_exporter --web.listen-address=:9100
-#
-# [Install]
-# WantedBy=multi-user.target
+# Paste service configuration
 
 # Reload systemd, enable and start service
 sudo systemctl daemon-reload
@@ -999,45 +1102,6 @@ sudo ufw allow from 10.0.2.0/24 to any port 9100 proto tcp
 curl http://localhost:9100/metrics | head -20
 ```
 
-#### VM Cloning Configuration
-
-For each cloned VM (control-node, web-server, app-server, db-server):
-
-```bash
-# Example for control-node (repeat for each VM with appropriate values)
-
-# Set hostname
-sudo hostnamectl set-hostname control-node
-
-# Update /etc/hosts
-sudo nano /etc/hosts
-# Change: 127.0.1.1  control-node
-# Add VM resolution:
-# 10.0.2.11    control-node
-# 10.0.2.12    web-server
-# 10.0.2.13    app-server
-# 10.0.2.14    db-server
-
-# Update NAT Network IP
-sudo nmcli connection modify "Wired connection 1" ipv4.addresses 10.0.2.11/24
-sudo nmcli connection down "Wired connection 1"
-sudo nmcli connection up "Wired connection 1"
-
-# Update Host-Only Network IP
-sudo nmcli connection modify "host-only" ipv4.addresses 192.168.56.11/24
-sudo nmcli connection down "host-only"
-sudo nmcli connection up "host-only"
-
-# Verify configuration
-hostname
-ip addr show
-ping -c 2 google.com
-ping -c 2 web-server
-
-# Reboot for all changes to take effect
-sudo reboot
-```
-
 </details>
 
 ---
@@ -1048,7 +1112,6 @@ sudo reboot
 <summary><b>Click to expand Phase 2 commands</b></summary>
 
 #### Initial Setup on Control-Node
-
 ```bash
 # SSH into control-node from Windows
 ssh sysadmin@192.168.56.11
@@ -1064,7 +1127,6 @@ ansible --version
 ```
 
 #### Project Structure Creation
-
 ```bash
 # Create main project directory
 mkdir -p ~/infrastructure
@@ -1080,11 +1142,10 @@ touch group_vars/all.yml
 ```
 
 #### SSH Key Setup for Ansible
-
 ```bash
 # Generate SSH key pair for Ansible (on control-node)
 ssh-keygen -t ed25519 -C "ansible-control"
-# Press ENTER for all prompts (use defaults, no passphrase)
+# Press ENTER for all prompts
 
 # View the public key
 cat ~/.ssh/id_ed25519.pub
@@ -1094,201 +1155,28 @@ ssh-copy-id sysadmin@web-server
 ssh-copy-id sysadmin@app-server
 ssh-copy-id sysadmin@db-server
 
-# Test passwordless SSH to each node
+# Test passwordless SSH
 ssh sysadmin@web-server "hostname"
 ssh sysadmin@app-server "hostname"
 ssh sysadmin@db-server "hostname"
 ```
 
-#### Configure Passwordless Sudo (on managed nodes)
-
-From **Windows PowerShell**, SSH into each managed node and configure:
-
-```bash
-# For web-server (repeat for app-server and db-server)
-ssh sysadmin@192.168.56.12
-
-# Create sudoers file
-echo "sysadmin ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/sysadmin
-
-# Set correct permissions
-sudo chmod 0440 /etc/sudoers.d/sysadmin
-
-# Test sudo without password
-sudo whoami
-# Should return: root (without asking for password)
-
-# Validate sudoers syntax
-sudo visudo -c
-# Should show: parsed OK
-
-# Exit back to Windows
-exit
-```
-
-#### Ansible Configuration Files
-
-**Create ansible.cfg:**
-
-```bash
-cd ~/infrastructure
-nano ansible.cfg
-```
-
-Paste this configuration:
-
-```ini
-[defaults]
-inventory = ./inventory/hosts.yml
-host_key_checking = False
-remote_user = sysadmin
-private_key_file = ~/.ssh/id_ed25519
-retry_files_enabled = False
-gathering = smart
-fact_caching = jsonfile
-fact_caching_connection = /tmp/ansible_facts
-fact_caching_timeout = 3600
-
-[privilege_escalation]
-become = True
-become_method = sudo
-become_user = root
-become_ask_pass = False
-
-[ssh_connection]
-pipelining = True
-```
-
-**Create inventory file:**
-
-```bash
-nano inventory/hosts.yml
-```
-
-Paste this inventory:
-
-```yaml
-all:
-  children:
-    control:
-      hosts:
-        control-node:
-          ansible_host: 10.0.2.11
-    
-    web_servers:
-      hosts:
-        web-server:
-          ansible_host: 10.0.2.12
-    
-    app_servers:
-      hosts:
-        app-server:
-          ansible_host: 10.0.2.13
-    
-    db_servers:
-      hosts:
-        db-server:
-          ansible_host: 10.0.2.14
-    
-    managed_nodes:
-      children:
-        web_servers:
-        app_servers:
-        db_servers:
-```
-
-**Create group variables:**
-
-```bash
-nano group_vars/all.yml
-```
-
-Paste these variables:
-
-```yaml
----
-# Global variables for all hosts
-
-# User configuration
-admin_user: sysadmin
-
-# SSH configuration
-ssh_port: 22
-ssh_permit_root_login: 'no'
-ssh_password_authentication: 'no'
-ssh_pubkey_authentication: 'yes'
-
-# Firewall configuration
-ufw_default_incoming: deny
-ufw_default_outgoing: allow
-ufw_ssh_from_anywhere: true
-
-# fail2ban configuration
-fail2ban_maxretry: 3
-fail2ban_bantime: 3600
-fail2ban_findtime: 600
-
-# node_exporter configuration
-node_exporter_version: "1.8.2"
-node_exporter_port: 9100
-
-# Network configuration
-nat_network: "10.0.2.0/24"
-
-# Application configuration
-app_directory: /opt/myapp
-app_user: appuser
-app_service_name: myapp
-app_server_port: 3000
-app_server_ip: 10.0.2.13
-web_server_domain: localhost
-
-# Database configuration
-db_name: appdb
-db_user: appuser
-db_password: "SecurePassword123!"
-```
-
 #### Test Ansible Connectivity
-
 ```bash
 # Ping all managed nodes
 ansible managed_nodes -m ping
 
-# Expected output: SUCCESS for all nodes
-
-# Check hostname on all nodes
+# Check hostname
 ansible managed_nodes -m command -a "hostname"
 
 # Check uptime
 ansible managed_nodes -m command -a "uptime"
 
-# Check disk space
-ansible managed_nodes -m shell -a "df -h /"
-
 # Test sudo access
 ansible managed_nodes -m command -a "sudo whoami"
-# Should return: root
-```
-
-#### Create and Run Base Hardening Playbook
-
-```bash
-# Create the playbook
-nano playbooks/base-hardening.yml
-
-# Run in check mode (dry run)
-ansible-playbook playbooks/base-hardening.yml --check
-
-# Run for real
-ansible-playbook playbooks/base-hardening.yml
-
-# Test idempotency (run again - should show mostly "ok")
-ansible-playbook playbooks/base-hardening.yml
 ```
 
 #### Deploy Service-Specific Playbooks
-
 ```bash
 # Deploy web server (Nginx)
 ansible-playbook playbooks/web-server.yml
@@ -1303,102 +1191,6 @@ ansible-playbook playbooks/db-server.yml
 ansible-playbook playbooks/verify-all-services.yml
 ```
 
-#### Manual Service Verification
-
-```bash
-# Check all services on web server
-ansible web_servers -m shell -a "systemctl is-active nginx ssh ufw fail2ban node_exporter"
-
-# Check all services on app server
-ansible app_servers -m shell -a "systemctl is-active myapp ssh ufw fail2ban node_exporter"
-
-# Check all services on database server
-ansible db_servers -m shell -a "systemctl is-active postgresql ssh ufw fail2ban node_exporter"
-
-# Test web server response
-ansible web_servers -m shell -a "curl -s http://localhost/"
-
-# Test app server health endpoint
-ansible app_servers -m shell -a "curl -s http://localhost:3000/health"
-
-# Test database connectivity from app server
-ansible app_servers -m shell -a 'PGPASSWORD=SecurePassword123\! psql -h 10.0.2.14 -U appuser -d appdb -c "SELECT version();"' -b
-
-# Check firewall rules on all servers
-ansible managed_nodes -m shell -a "sudo ufw status numbered"
-
-# Check fail2ban status
-ansible managed_nodes -m shell -a "sudo fail2ban-client status sshd"
-
-# Check node_exporter metrics
-ansible managed_nodes -m shell -a "curl -s http://localhost:9100/metrics | head -10"
-```
-
-#### Git Repository Setup and Commits
-
-```bash
-cd ~/infrastructure
-
-# Create .gitignore
-nano .gitignore
-# (Add appropriate ignore patterns)
-
-# Configure Git
-git config --global user.name "Your Name"
-git config --global user.email "your-email@example.com"
-
-# Initialize repository
-git init
-
-# Stage files
-git add .
-
-# Create initial commit
-git commit -m "Initial commit: Ansible infrastructure setup"
-
-# Add GitHub remote
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
-
-# Pull and merge existing content
-git pull origin main --allow-unrelated-histories
-
-# Push to GitHub
-git push -u origin main
-
-# Future commits
-git add .
-git commit -m "Descriptive message"
-git push
-```
-
-#### Ansible Ad-Hoc Commands (Useful for Testing)
-
-```bash
-# Run any command on all managed nodes
-ansible managed_nodes -m command -a "COMMAND"
-
-# Examples:
-ansible managed_nodes -m command -a "free -h"
-ansible managed_nodes -m command -a "df -h"
-ansible managed_nodes -m command -a "who"
-ansible managed_nodes -m shell -a "ps aux | grep ssh"
-
-# Copy a file to all nodes
-ansible managed_nodes -m copy -a "src=/path/to/local/file dest=/path/on/remote"
-
-# Install a package on all nodes
-ansible managed_nodes -m apt -a "name=htop state=present" -b
-
-# Restart a service on all nodes
-ansible managed_nodes -m systemd -a "name=ssh state=restarted" -b
-
-# Gather facts about all nodes
-ansible managed_nodes -m setup
-
-# Check specific fact
-ansible managed_nodes -m setup -a "filter=ansible_distribution*"
-```
-
 </details>
 
 ---
@@ -1409,21 +1201,8 @@ ansible managed_nodes -m setup -a "filter=ansible_distribution*"
 <summary><b>Click to expand Phase 3 commands</b></summary>
 
 #### Deploy Monitoring Stack
-
 ```bash
-# SSH into control-node
-ssh sysadmin@192.168.56.11
-
-# Navigate to infrastructure directory
-cd ~/infrastructure
-
-# First, ensure node_exporter is running on all nodes
-ansible all -m systemd -a "name=node_exporter state=started enabled=yes" -b
-
-# Open firewall ports for monitoring on managed nodes
-ansible-playbook playbooks/open-monitoring-ports.yml
-
-# Deploy Prometheus and Grafana on control-node
+# Deploy Prometheus and Grafana
 ansible-playbook playbooks/monitoring.yml
 
 # Verify the monitoring stack
@@ -1431,171 +1210,173 @@ ansible-playbook playbooks/verify-monitoring.yml
 ```
 
 #### Check Prometheus Status
-
 ```bash
 # Check Prometheus service
 sudo systemctl status prometheus
-sudo systemctl restart prometheus
-sudo systemctl enable prometheus
-
-# Check Prometheus configuration
-sudo cat /etc/prometheus/prometheus.yml
-sudo /usr/local/bin/promtool check config /etc/prometheus/prometheus.yml
 
 # Check Prometheus targets
 curl http://localhost:9090/api/v1/targets | python3 -m json.tool
 
-# Simple target status check
-curl -s "http://localhost:9090/api/v1/targets" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-for target in data['data']['activeTargets']:
-    print(f\"{target['labels']['instance']}: {target['health']}\")
-"
-
 # Test Prometheus queries
-curl "http://localhost:9090/api/v1/query?query=node_cpu_seconds_total" | python3 -m json.tool | head -30
 curl "http://localhost:9090/api/v1/query?query=up" | python3 -m json.tool
 ```
 
 #### Check Grafana Status
-
 ```bash
 # Check Grafana service
 sudo systemctl status grafana-server
-sudo systemctl restart grafana-server
-sudo systemctl enable grafana-server
-
-# Check Grafana logs
-sudo journalctl -u grafana-server --no-pager -n 20
 
 # Test Grafana API
 curl http://localhost:3001/api/health | python3 -m json.tool
-
-# Check Grafana datasources (requires authentication)
-AUTH_HEADER=$(echo -n "admin:admin123!" | base64)
-curl -s -H "Authorization: Basic $AUTH_HEADER" http://localhost:3001/api/datasources | python3 -m json.tool
 ```
 
-#### Test Monitoring Queries
+</details>
 
+---
+
+### Phase 4: Centralized Logging Commands
+
+<details>
+<summary><b>Click to expand Phase 4 commands</b></summary>
+
+#### Deploy Logging Infrastructure
 ```bash
-# Test CPU query
-curl -s "http://localhost:9090/api/v1/query?query=(1%20-%20avg%20by(instance)(rate(node_cpu_seconds_total%7Bmode%3D%22idle%22%7D%5B1m%5D)))%20*%20100" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-if data['status'] == 'success':
-    results = data['data']['result']
-    print('CPU Usage:')
-    for r in results:
-        print(f'  {r[\"metric\"][\"instance\"]}: {r[\"value\"][1]}%')
-"
+# SSH into control-node
+ssh sysadmin@192.168.56.11
+cd ~/infrastructure
 
-# Test Memory query
-curl -s "http://localhost:9090/api/v1/query?query=(1%20-%20(node_memory_MemAvailable_bytes%20/%20node_memory_MemTotal_bytes))%20*%20100" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-if data['status'] == 'success':
-    results = data['data']['result']
-    print('Memory Usage:')
-    for r in results[:3]:
-        print(f'  {r[\"metric\"][\"instance\"]}: {r[\"value\"][1]}%')
-"
+# Deploy centralized logging
+ansible-playbook playbooks/logging.yml
 
-# Test Disk query
-curl -s "http://localhost:9090/api/v1/query?query=node_filesystem_avail_bytes%7Bfstype!%3D%22tmpfs%22%7D%20/%20node_filesystem_size_bytes%7Bfstype!%3D%22tmpfs%22%7D%20*%20100" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-if data['status'] == 'success':
-    results = data['data']['result']
-    print(f'Found {len(results)} disk results')
-    for r in results[:2]:
-        mount = r['metric'].get('mountpoint', 'unknown')
-        print(f'  {r[\"metric\"][\"instance\"]} - {mount}: {r[\"value\"][1]}% free')
-"
+# Verify logging setup
+ansible-playbook playbooks/verify-logging.yml
 ```
 
-#### Check All Monitoring Components
-
+#### Check rsyslog Server (on control-node)
 ```bash
-# Comprehensive monitoring check
-echo "=== MONITORING STACK STATUS ==="
+# Check rsyslog service
+sudo systemctl status rsyslog
 
-echo -e "\n1. Prometheus Service:"
-systemctl is-active prometheus && echo "  ✅ Active" || echo "  ❌ Inactive"
+# View rsyslog configuration
+sudo cat /etc/rsyslog.d/50-remote.conf
 
-echo -e "\n2. Grafana Service:"
-systemctl is-active grafana-server && echo "  ✅ Active" || echo "  ❌ Inactive"
+# Check if rsyslog is listening on port 514
+sudo netstat -tulpn | grep rsyslog
+sudo ss -tulpn | grep 514
 
-echo -e "\n3. Prometheus Targets:"
-curl -s "http://localhost:9090/api/v1/targets" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-up = 0
-total = 0
-for target in data['data']['activeTargets'][:4]:
-    total += 1
-    if target['health'] == 'up':
-        up += 1
-print(f'  {up}/{total} node_exporter targets UP')
-"
+# View centralized logs
+sudo ls -lh /var/log/remote/
 
-echo -e "\n4. Grafana Health:"
-curl -s http://localhost:3001/api/health | python3 -c "
-import sys, json
-try:
-    data = json.load(sys.stdin)
-    print(f'  ✅ {data[\"database\"]}')
-except:
-    print('  ❌ Cannot reach Grafana')
-"
-
-echo -e "\n5. Access URLs:"
-echo "  Prometheus: http://192.168.56.11:9090"
-echo "  Grafana:    http://192.168.56.11:3001"
-echo "  Credentials: admin / admin123!"
+# View logs from specific server
+sudo tail -f /var/log/remote/web-server/syslog
+sudo tail -f /var/log/remote/app-server/syslog
+sudo tail -f /var/log/remote/db-server/syslog
 ```
 
-#### Monitoring Troubleshooting
-
+#### Check rsyslog Client (on managed nodes)
 ```bash
-# If Prometheus targets show "DOWN"
-# 1. Check node_exporter on each node
-ansible all -m systemd -a "name=node_exporter state=restarted" -b
+# Check rsyslog service on all nodes
+ansible managed_nodes -m systemd -a "name=rsyslog state=started enabled=yes" -b
 
-# 2. Check firewall rules
-ansible managed_nodes -m shell -a "sudo ufw status" -b
+# View rsyslog client configuration
+ansible managed_nodes -m shell -a "cat /etc/rsyslog.d/50-forward.conf" -b
 
-# 3. Test connectivity from control-node to each node
-for ip in 10.0.2.12 10.0.2.13 10.0.2.14; do
-  echo -n "Testing $ip:9100: "
-  nc -z -w2 $ip 9100 && echo "OK" || echo "FAILED"
-done
+# Test log forwarding
+ansible web_servers -m shell -a "logger 'Test log message from web-server'" -b
 
-# 4. Restart Prometheus
-sudo systemctl restart prometheus
-
-# If Grafana shows no data
-# 1. Check time range (should be "Last 5 minutes" not "Last 6 hours")
-# 2. Check datasource is "Prometheus"
-# 3. Test queries directly in Prometheus first
-# 4. Check Grafana logs
-sudo journalctl -u grafana-server --no-pager -n 20
+# Verify test message appeared on control-node
+sudo grep "Test log message" /var/log/remote/web-server/syslog
 ```
 
-#### Quick Test Data Generation
-
+#### Troubleshoot Logging Issues
 ```bash
-# Generate some system activity to see graphs move
-echo "Generating test load..."
+# Check firewall allows syslog
+ansible control -m shell -a "sudo ufw status | grep 514" -b
 
-# CPU load on app-server
-ansible app-server -m shell -a "timeout 30 dd if=/dev/zero of=/dev/null bs=1M count=1000 2>/dev/null" -b &
+# Restart rsyslog on all nodes
+ansible all -m systemd -a "name=rsyslog state=restarted" -b
 
-# Disk activity on web-server
-ansible web-server -m shell -a "for i in {1..5}; do dd if=/dev/zero of=/tmp/test\$i bs=1M count=10 2>/dev/null & sleep 2; done" -b &
+# Check rsyslog errors
+ansible all -m shell -a "sudo journalctl -u rsyslog -n 20" -b
 
-echo "Activity generated for 30 seconds. Check Grafana dashboards!"
+# Test connectivity from client to server
+ansible managed_nodes -m shell -a "nc -zv 10.0.2.11 514" -b
+```
+
+</details>
+
+---
+
+### Phase 5: Backup Automation Commands
+
+<details>
+<summary><b>Click to expand Phase 5 commands</b></summary>
+
+#### Deploy Backup System
+```bash
+# SSH into control-node
+ssh sysadmin@192.168.56.11
+cd ~/infrastructure
+
+# Deploy backup automation
+ansible-playbook playbooks/backup.yml
+```
+
+#### Verify Backup Configuration
+```bash
+# 1. Verify backup directories exist
+ansible all -m shell -a "ls -lh /var/backups/" -b
+
+# 2. Check actual backup files were created
+ansible db_servers -m shell -a "ls -lh /var/backups/database/daily/" -b
+ansible managed_nodes -m shell -a "ls -lh /var/backups/configs/daily/" -b
+
+# 3. Verify cron jobs are scheduled
+ansible all -m shell -a "crontab -l 2>/dev/null | grep backup || echo 'No backup cron jobs'" -b
+
+# 4. Check backup file sizes to confirm they have content
+ansible db_servers -m shell -a "du -sh /var/backups/database/daily/* 2>/dev/null | head -3" -b
+```
+
+#### Manual Backup Execution
+```bash
+# Manually trigger database backup
+ansible db_servers -m shell -a "/usr/local/bin/backup-database.sh" -b
+
+# Manually trigger configuration backup
+ansible web_servers -m shell -a "/usr/local/bin/backup-configs.sh" -b
+ansible app_servers -m shell -a "/usr/local/bin/backup-configs.sh" -b
+
+# View backup logs
+ansible db_servers -m shell -a "tail -20 /var/backups/logs/backup.log" -b
+ansible web_servers -m shell -a "tail -20 /var/backups/logs/backup.log" -b
+```
+
+#### Check Backup Status
+```bash
+# Database backups on db-server
+ssh sysadmin@192.168.56.14
+sudo ls -lh /var/backups/database/daily/
+sudo ls -lh /var/backups/database/weekly/
+sudo ls -lh /var/backups/database/monthly/
+
+# Configuration backups on web-server
+ssh sysadmin@192.168.56.12
+sudo ls -lh /var/backups/configs/daily/
+sudo ls -lh /var/backups/configs/weekly/
+sudo ls -lh /var/backups/configs/monthly/
+
+# Check cron schedule
+crontab -l | grep backup
+```
+
+#### Test Backup Restoration (for future Phase 6)
+```bash
+# To restore database backup (example for Phase 6):
+# sudo -u postgres pg_restore -d appdb /var/backups/database/daily/backup-YYYYMMDD.sql.gz
+
+# To restore configuration files (example for Phase 6):
+# sudo tar -xzf /var/backups/configs/daily/backup-YYYYMMDD.tar.gz -C /
 ```
 
 </details>
@@ -1608,7 +1389,6 @@ echo "Activity generated for 30 seconds. Check Grafana dashboards!"
 <summary><b>Click to expand troubleshooting commands</b></summary>
 
 #### Network Issues
-
 ```bash
 # Check IP addresses
 ip addr show
@@ -1616,25 +1396,20 @@ ip addr show
 # Check routing table
 ip route show
 
-# Check DNS resolution
-cat /etc/resolv.conf
-resolvectl status
-
 # Test connectivity
-ping -c 4 8.8.8.8          # Test internet
-ping -c 4 google.com       # Test DNS
-ping -c 4 web-server       # Test internal hostname
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+ping -c 4 web-server
 
 # Check open ports
 sudo netstat -tulpn
 sudo ss -tulpn
 
 # Test specific port
-nc -zv hostname port       # Example: nc -zv web-server 22
+nc -zv hostname port
 ```
 
 #### SSH Issues
-
 ```bash
 # Check SSH service status
 sudo systemctl status ssh
@@ -1646,16 +1421,11 @@ sudo tail -f /var/log/auth.log
 # Test SSH configuration
 sudo sshd -t
 
-# Check SSH keys
-ls -la ~/.ssh/
-cat ~/.ssh/authorized_keys
-
 # Debug SSH connection
 ssh -vvv sysadmin@hostname
 ```
 
 #### Firewall Issues
-
 ```bash
 # Check UFW status
 sudo ufw status verbose
@@ -1663,136 +1433,25 @@ sudo ufw status numbered
 
 # View UFW logs
 sudo tail -f /var/log/ufw.log
-
-# Temporarily disable for testing (NOT recommended in production)
-sudo ufw disable
-
-# Re-enable
-sudo ufw enable
-```
-
-#### fail2ban Issues
-
-```bash
-# Check fail2ban status
-sudo systemctl status fail2ban
-
-# Check all jails
-sudo fail2ban-client status
-
-# Check specific jail
-sudo fail2ban-client status sshd
-
-# View banned IPs
-sudo fail2ban-client get sshd banip
-
-# Unban an IP
-sudo fail2ban-client set sshd unbanip IP_ADDRESS
-
-# View fail2ban logs
-sudo tail -f /var/log/fail2ban.log
-```
-
-#### Ansible Issues
-
-```bash
-# Test connectivity
-ansible all -m ping
-
-# Run with verbose output
-ansible-playbook playbook.yml -v    # Verbose
-ansible-playbook playbook.yml -vv   # More verbose
-ansible-playbook playbook.yml -vvv  # Very verbose
-
-# Run in check mode (dry run)
-ansible-playbook playbook.yml --check
-
-# Run only on specific host
-ansible-playbook playbook.yml --limit web-server
-
-# View Ansible configuration
-ansible-config dump
-
-# List all hosts in inventory
-ansible-inventory --list
-ansible-inventory --graph
-
-# Check syntax of playbook
-ansible-playbook playbook.yml --syntax-check
-```
-
-#### Service-Specific Debugging
-
-```bash
-# Nginx
-sudo nginx -t                        # Test configuration
-sudo tail -f /var/log/nginx/error.log
-sudo tail -f /var/log/nginx/app-access.log
-
-# Node.js Application (myapp)
-sudo systemctl status myapp
-sudo journalctl -u myapp -f          # Follow logs
-curl http://localhost:3000/health    # Health check
-
-# PostgreSQL
-sudo systemctl status postgresql
-sudo -u postgres psql -c '\l'        # List databases
-sudo -u postgres psql appdb -c '\dt' # List tables
-sudo tail -f /var/log/postgresql/postgresql-16-main.log
-```
-
-#### System Performance
-
-```bash
-# Check CPU usage
-top
-htop
-
-# Check memory usage
-free -h
-vmstat 1 5
-
-# Check disk space
-df -h
-du -sh /path/to/directory
-
-# Check disk I/O
-iostat -x 1 5
-iotop
-
-# Check network usage
-iftop
-nethogs
-
-# View system logs
-sudo journalctl -xe
-sudo tail -f /var/log/syslog
 ```
 
 #### Service Management
-
 ```bash
 # Check service status
 sudo systemctl status SERVICE_NAME
 
-# Start a service
+# Start/Stop/Restart service
 sudo systemctl start SERVICE_NAME
-
-# Stop a service
 sudo systemctl stop SERVICE_NAME
-
-# Restart a service
 sudo systemctl restart SERVICE_NAME
 
-# Enable service on boot
+# Enable/Disable on boot
 sudo systemctl enable SERVICE_NAME
-
-# Disable service on boot
 sudo systemctl disable SERVICE_NAME
 
 # View service logs
 sudo journalctl -u SERVICE_NAME -n 50
-sudo journalctl -u SERVICE_NAME -f    # Follow logs
+sudo journalctl -u SERVICE_NAME -f
 ```
 
 </details>
@@ -1837,6 +1496,7 @@ This project showcases a comprehensive set of skills valued in DevOps, Cloud Eng
 - Configuration management
 - Automated deployment
 - Service orchestration
+- Cron job scheduling
 
 **Application Deployment:**
 - Reverse proxy configuration (Nginx)
@@ -1853,6 +1513,20 @@ This project showcases a comprehensive set of skills valued in DevOps, Cloud Eng
 - Time-series data analysis
 - Infrastructure observability
 - Real-time monitoring implementation
+
+**Logging & Auditing:**
+- Centralized log management (rsyslog)
+- Log forwarding configuration
+- Log rotation and retention policies
+- Log analysis and troubleshooting
+
+**Backup & Recovery:**
+- Automated backup strategies
+- Database backup automation (pg_dump)
+- Configuration backup procedures
+- Multi-tier retention policies
+- Backup verification and testing
+- Disaster recovery planning
 
 **Version Control:**
 - Git workflow
@@ -1903,11 +1577,12 @@ This project showcases a comprehensive set of skills valued in DevOps, Cloud Eng
 
 Potential additions to expand the project:
 
-### Immediate Next Steps (Phase 3)
-- [ ] Prometheus deployment for metrics collection
-- [ ] Grafana dashboards for visualization
-- [ ] Alertmanager configuration
-- [ ] Custom alert rules
+### Immediate Next Steps (Phase 6)
+- [ ] Database restore procedures
+- [ ] Configuration restore testing
+- [ ] Full infrastructure rebuild automation
+- [ ] RTO/RPO documentation
+- [ ] Disaster recovery playbooks
 
 ### Infrastructure Improvements
 - [ ] High Availability (HA) setup with keepalived
@@ -1983,6 +1658,11 @@ If you're building a similar project, here are helpful resources:
 - [Grafana Documentation](https://grafana.com/docs/)
 - [Node Exporter Guide](https://prometheus.io/docs/guides/node-exporter/)
 
+**Logging & Backup:**
+- [rsyslog Documentation](https://www.rsyslog.com/doc/)
+- [PostgreSQL Backup Guide](https://www.postgresql.org/docs/current/backup.html)
+- [Logrotate Manual](https://linux.die.net/man/8/logrotate)
+
 ---
 
 ## 📄 License
@@ -2018,6 +1698,7 @@ Special thanks to:
 - The Ansible community for excellent documentation
 - The Linux community for amazing tools and support
 - The Prometheus and Grafana teams for outstanding monitoring tools
+- The rsyslog and PostgreSQL communities for robust logging and database solutions
 - Everyone who provides feedback and suggestions
 
 ---
@@ -2028,13 +1709,15 @@ Special thanks to:
 - **Phase 1 Complete**: January 31, 2026
 - **Phase 2 Complete**: February 3, 2026
 - **Phase 3 Complete**: February 3, 2026
-- **Current Status**: Phase 3 Complete - Ready for Phase 4
+- **Phase 4 Complete**: February 7, 2026
+- **Phase 5 Complete**: February 7, 2026
+- **Current Status**: Phase 5 Complete - Ready for Phase 6
 - **Total Commits**: Check GitHub for latest count
-- **Lines of Ansible Code**: ~1,500+
+- **Lines of Ansible Code**: ~2,000+
 - **Documentation Pages**: 1 (comprehensive README)
-- **Services Deployed**: 3-tier application stack + Monitoring
-- **Ansible Roles**: 10 (security + services + monitoring)
-- **Playbooks**: 9 (deployment + verification)
+- **Services Deployed**: 3-tier application stack + Monitoring + Logging + Backups
+- **Ansible Roles**: 14 (security + services + monitoring + logging + backup)
+- **Playbooks**: 11 (deployment + verification)
 
 ---
 
@@ -2054,13 +1737,20 @@ Special thanks to:
 - ✅ **2026-02-03**: Grafana deployed and configured
 - ✅ **2026-02-03**: Monitoring dashboards created and tested
 - ✅ **2026-02-03**: Phase 3 COMPLETE - Centralized monitoring operational
-- 🎯 **Next**: Phase 4 - Centralized logging implementation
+- ✅ **2026-02-07**: rsyslog server configured on control-node
+- ✅ **2026-02-07**: Log forwarding from all managed nodes working
+- ✅ **2026-02-07**: Phase 4 COMPLETE - Centralized logging operational
+- ✅ **2026-02-07**: Database backup automation deployed
+- ✅ **2026-02-07**: Configuration backup automation deployed
+- ✅ **2026-02-07**: Multi-tier retention policy implemented
+- ✅ **2026-02-07**: Phase 5 COMPLETE - Automated backups operational
+- 🎯 **Next**: Phase 6 - Disaster recovery testing
 
 ---
 
 ## 📊 Infrastructure Health Status
 
-**Last Verified**: February 3, 2026
+**Last Verified**: February 7, 2026
 
 | Component | Status | Health Check |
 |-----------|--------|--------------|
@@ -2074,18 +1764,21 @@ Special thanks to:
 | Node Exporter | 🟢 Running | ✓ Metrics available (all 4 servers) |
 | **Prometheus** | **🟢 Running** | **✓ All 4 targets UP** ✅ |
 | **Grafana** | **🟢 Running** | **✓ Dashboards operational** ✅ |
+| **Centralized Logging** | **🟢 Running** | **✓ All nodes forwarding logs** ✅ |
+| **Database Backups** | **🟢 Scheduled** | **✓ Cron job active (2:00 AM)** ✅ |
+| **Config Backups** | **🟢 Scheduled** | **✓ Cron jobs active (3:00 AM)** ✅ |
 | End-to-End Connectivity | 🟢 Verified | ✓ Web→App→DB working |
-| **Monitoring Stack** | **🟢 Verified** | **✓ Full observability** ✅ |
+| **Full Stack** | **🟢 Verified** | **✓ Complete observability & backup** ✅ |
 
 ---
 
-**Last Updated**: February 3, 2026  
-**README Version**: 4.0  
+**Last Updated**: February 7, 2026  
+**README Version**: 5.0  
 **Status**: Living Document - Updated as project progresses
 
 ---
 
-*Phase 3 is complete! Infrastructure now has centralized monitoring with Prometheus and Grafana. Real-time metrics from all 4 servers are being collected and visualized. Next: Implement centralized logging with rsyslog/ELK stack.*
+*Phase 5 is complete! Infrastructure now has automated backups with multi-tier retention policies. Database and configuration backups run daily with 7/28/90 day retention. Next: Test disaster recovery procedures and restore capabilities.*
 
 ---
 
