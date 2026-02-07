@@ -309,6 +309,7 @@ Security: Each tier only accepts connections from the previous tier
 
 ### Phase 4: Centralized Logging ⏸️ PENDING
 **Objective**: Implement centralized log management with rsyslog or ELK stack
+<img width="1580" height="798" alt="backup1" src="https://github.com/user-attachments/assets/e6ed6aa7-39c6-41c8-b453-d5db0cf2ae2d" />
 
 **Planned Tasks**:
 - [ ] Set up centralized log server
