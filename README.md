@@ -365,6 +365,7 @@ Security: Each tier only accepts connections from the previous tier
 
 ### Phase 5: Backup Automation ✅ COMPLETE
 **Objective**: Implement automated backup system for critical data
+<img width="700" height="687" alt="backupcapture" src="https://github.com/user-attachments/assets/dc5c27ed-6718-4c82-b36f-cb5fb9b99bf6" />
 
 **Tasks Completed**:
 
