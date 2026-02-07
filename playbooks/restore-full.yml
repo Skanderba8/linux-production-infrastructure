@@ -1,0 +1,11 @@
+---
+- name: Full Restore from Backups
+  hosts: localhost
+  become: no
+
+  tasks:
+    - name: Restore database
+      include: restore-database.yml
+
+    - name: Restore configurations
+      include: restore-configs.yml

@@ -1,0 +1,55 @@
+---
+# tasks file for rsyslog_server
+
+- name: Install rsyslog
+  apt:
+    name: rsyslog
+    state: present
+    update_cache: yes
+
+- name: Create remote log directory
+  file:
+    path: "{{ rsyslog_log_dir }}"
+    state: directory
+    owner: syslog
+    group: adm
+    mode: '0755'
+
+- name: Configure rsyslog server
+  template:
+    src: rsyslog-server.conf.j2
+    dest: /etc/rsyslog.d/00-server.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart rsyslog
+
+- name: Configure log rotation for remote logs
+  template:
+    src: rsyslog-remote.j2
+    dest: /etc/logrotate.d/rsyslog-remote
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Open rsyslog port in firewall
+  ufw:
+    rule: allow
+    port: "{{ rsyslog_server_port }}"
+    proto: udp
+    from_ip: "10.0.2.0/24"
+    comment: "rsyslog from internal network"
+
+- name: Ensure rsyslog is running and enabled
+  systemd:
+    name: rsyslog
+    state: started
+    enabled: yes
+
+- name: Deploy log summary script
+  copy:
+    src: log-summary.sh
+    dest: /usr/local/bin/log-summary
+    owner: root
+    group: root
+    mode: '0755'

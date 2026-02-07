@@ -1,0 +1,26 @@
+---
+- name: Configure Centralized Logging
+  hosts: all
+  become: yes
+  
+  tasks:
+    - name: Setup rsyslog server on control-node
+      include_role:
+        name: rsyslog_server
+      when: inventory_hostname == 'control-node'
+    
+    - name: Setup rsyslog clients on managed nodes
+      include_role:
+        name: rsyslog_client
+      when: inventory_hostname in groups['managed_nodes']
+    
+    - name: Display logging configuration summary
+      debug:
+        msg:
+          - "=== Centralized Logging Configuration Complete ==="
+          - "Log Server: control-node ({{ hostvars['control-node']['ansible_host'] }})"
+          - "Log Storage: /var/log/remote/<hostname>/"
+          - "Log Retention: {{ rsyslog_retention_days | default(30) }} days"
+          - "Forwarding Port: {{ rsyslog_server_port | default(514) }}/udp"
+      when: inventory_hostname == 'control-node'
+      run_once: yes

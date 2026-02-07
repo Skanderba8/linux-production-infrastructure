@@ -1,0 +1,57 @@
+---
+- name: Verify Centralized Logging
+  hosts: all
+  become: yes
+  
+  tasks:
+    - name: Check rsyslog service status
+      systemd:
+        name: rsyslog
+      register: rsyslog_status
+    
+    - name: Display rsyslog status
+      debug:
+        msg: "rsyslog on {{ inventory_hostname }}: {{ rsyslog_status.status.ActiveState }}"
+    
+    - name: Generate test log messages from clients
+      shell: logger -t ANSIBLE_TEST "Test message from {{ inventory_hostname }} at $(date)"
+      when: inventory_hostname in groups['managed_nodes']
+    
+    - name: Wait for logs to be forwarded
+      pause:
+        seconds: 5
+      when: inventory_hostname == 'control-node'
+      run_once: yes
+    
+    - name: Check for remote logs on server
+      find:
+        paths: /var/log/remote
+        patterns: "*.log"
+        recurse: yes
+      register: remote_logs
+      when: inventory_hostname == 'control-node'
+    
+    - name: Display remote log files found
+      debug:
+        msg: 
+          - "=== Remote Log Files on control-node ==="
+          - "{{ remote_logs.files | map(attribute='path') | list }}"
+      when: inventory_hostname == 'control-node'
+    
+    - name: Verify test messages in logs
+      shell: |
+        for host in web-server app-server db-server; do
+          echo "=== Checking logs for $host ==="
+          if [ -d "/var/log/remote/$host" ]; then
+            grep "ANSIBLE_TEST" /var/log/remote/$host/*.log 2>/dev/null | tail -2 || echo "No test messages found yet"
+          else
+            echo "No log directory for $host yet"
+          fi
+        done
+      register: test_messages
+      when: inventory_hostname == 'control-node'
+    
+    - name: Display test message verification
+      debug:
+        msg: "{{ test_messages.stdout_lines }}"
+      when: inventory_hostname == 'control-node'

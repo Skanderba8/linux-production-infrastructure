@@ -1,0 +1,9 @@
+---
+- name: Test Restore from Backups
+  hosts: localhost
+  connection: local
+  become: no
+  tasks:
+    - name: Include restore_test role
+      include_role:
+        name: restore_test

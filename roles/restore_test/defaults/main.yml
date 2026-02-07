@@ -1,0 +1,7 @@
+---
+# Defaults for restore_test role
+backup_dir: /var/backups
+test_db_host: 10.0.2.14
+test_db_name: test_appdb
+db_user: appuser
+db_password: SecurePassword123!

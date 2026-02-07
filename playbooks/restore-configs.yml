@@ -1,0 +1,151 @@
+---
+- name: Restore Configurations from Backup
+  hosts: localhost  # Run on control-node
+  become: no
+  vars:
+    hosts_list:
+      - control-node
+      - web-server
+      - app-server
+      - db-server
+    paths_list:
+      - /tmp/configs.tar.gz
+      - /tmp/restore
+      - /tmp/*-config.tar.gz
+    backup_dir: /var/backups/configs/daily
+
+  tasks:
+    - name: Find latest config backup
+      find:
+        paths: "{{ backup_dir }}"
+        patterns: "*.tar.gz"
+        recurse: no
+      register: config_backups
+      failed_when: config_backups.matched == 0
+
+    - name: Set latest backup file
+      set_fact:
+        backup_file: "{{ (config_backups.files | sort(attribute='mtime', reverse=true) | first).path }}"
+
+    - name: Display selected backup
+      debug:
+        msg: "Using latest backup: {{ backup_file }}"
+
+    - name: Verify backup file exists
+      stat:
+        path: "{{ backup_file }}"
+      register: backup_stat
+      failed_when: not backup_stat.stat.exists
+
+    - name: Stop services on specific hosts
+      systemd:
+        name: "{{ item.name }}"
+        state: stopped
+      loop:
+        - { name: 'nginx', host: 'web-server' }
+        - { name: 'myapp', host: 'app-server' }
+        - { name: 'postgresql', host: 'db-server' }
+        - { name: 'prometheus', host: 'control-node' }
+        - { name: 'grafana', host: 'control-node' }
+      delegate_to: "{{ item.host }}"
+      become: yes
+      ignore_errors: yes
+
+    - name: Create restore directory locally
+      file:
+        path: /tmp/restore/
+        state: directory
+      when: not (lookup('fileglob', '/tmp/restore/*') | length > 0)
+
+    - name: Extract outer archive locally
+      unarchive:
+        src: "{{ backup_file }}"
+        dest: /tmp/restore/
+        remote_src: yes
+
+    - name: Restore web-server configs
+      copy:
+        src: /tmp/restore/web-nginx-config.tar.gz
+        dest: /tmp/web-nginx-config.tar.gz
+      delegate_to: web-server
+      become: yes
+    - name: Extract web configs
+      shell: tar xzf /tmp/web-nginx-config.tar.gz -C /
+      delegate_to: web-server
+      become: yes
+
+    - name: Restore app-server configs
+      copy:
+        src: /tmp/restore/app-myapp-code.tar.gz
+        dest: /tmp/app-myapp-code.tar.gz
+      delegate_to: app-server
+      become: yes
+    - name: Extract app configs
+      shell: tar xzf /tmp/app-myapp-code.tar.gz -C /
+      delegate_to: app-server
+      become: yes
+
+    - name: Restore db-server configs
+      copy:
+        src: /tmp/restore/db-postgresql-config.tar.gz
+        dest: /tmp/db-postgresql-config.tar.gz
+      delegate_to: db-server
+      become: yes
+    - name: Extract db configs
+      shell: tar xzf /tmp/db-postgresql-config.tar.gz -C /
+      delegate_to: db-server
+      become: yes
+
+    - name: Restore control-node ansible infra
+      shell: tar xzf /tmp/restore/control-ansible-infra.tar.gz -C /
+      delegate_to: control-node
+      become: yes
+
+    - name: Restore control-node prometheus configs
+      shell: tar xzf /tmp/restore/control-prometheus-config.tar.gz -C /
+      delegate_to: control-node
+      become: yes
+
+    - name: Restore control-node grafana configs
+      shell: tar xzf /tmp/restore/control-grafana-config.tar.gz -C /
+      delegate_to: control-node
+      become: yes
+
+    - name: Cleanup temp files on all hosts
+      file:
+        path: "{{ item[1] }}"
+        state: absent
+      loop: "{{ hosts_list | product(paths_list) | list }}"
+      delegate_to: "{{ item[0] }}"
+      become: yes
+
+    - name: Restart services on specific hosts
+      systemd:
+        name: "{{ item.name }}"
+        state: restarted
+      loop:
+        - { name: 'nginx', host: 'web-server' }
+        - { name: 'myapp', host: 'app-server' }
+        - { name: 'postgresql', host: 'db-server' }
+        - { name: 'prometheus', host: 'control-node' }
+        - { name: 'grafana', host: 'control-node' }
+      delegate_to: "{{ item.host }}"
+      become: yes
+      ignore_errors: yes
+
+    - name: Verify services
+      shell: systemctl is-active "{{ item.name }}"
+      loop:
+        - { name: 'nginx', host: 'web-server' }
+        - { name: 'myapp', host: 'app-server' }
+        - { name: 'postgresql', host: 'db-server' }
+        - { name: 'prometheus', host: 'control-node' }
+        - { name: 'grafana', host: 'control-node' }
+      delegate_to: "{{ item.host }}"
+      become: yes
+      register: service_status
+      ignore_errors: yes
+
+    - name: Display verification
+      debug:
+        msg: "{{ service_status.results | map(attribute='stdout') | list }}"

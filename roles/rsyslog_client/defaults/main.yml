@@ -1,0 +1,5 @@
+---
+# Default variables for rsyslog client
+
+rsyslog_server_ip: "10.0.2.11"  # control-node
+rsyslog_server_port: 514

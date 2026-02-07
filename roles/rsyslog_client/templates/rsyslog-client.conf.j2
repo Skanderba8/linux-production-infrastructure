@@ -1,0 +1,8 @@
+# rsyslog client configuration
+# Forward all logs to central log server
+
+# Forward all messages to remote log server
+*.* @{{ rsyslog_server_ip }}:{{ rsyslog_server_port }}
+
+# Also keep local copies
+*.* /var/log/syslog

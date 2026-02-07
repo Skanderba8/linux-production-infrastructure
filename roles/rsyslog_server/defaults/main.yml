@@ -1,0 +1,6 @@
+---
+# Default variables for rsyslog server
+
+rsyslog_server_port: 514
+rsyslog_log_dir: /var/log/remote
+rsyslog_retention_days: 30

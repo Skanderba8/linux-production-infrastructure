@@ -1,0 +1,82 @@
+---
+- name: Restore PostgreSQL Database from Backup
+  hosts: localhost  # Run on control-node
+  become: no
+  vars:
+    backup_dir: /var/backups/database/daily
+    db_password: 'SecurePassword123!'
+
+  tasks:
+    - name: Find latest database backup
+      find:
+        paths: "{{ backup_dir }}"
+        patterns: "*.sql.gz"
+        recurse: no
+      register: db_backups
+      failed_when: db_backups.matched == 0
+
+    - name: Set latest backup file
+      set_fact:
+        backup_file: "{{ (db_backups.files | sort(attribute='mtime', reverse=true) | first).path }}"
+
+    - name: Display selected backup
+      debug:
+        msg: "Using latest backup: {{ backup_file }}"
+
+    - name: Verify backup file exists
+      stat:
+        path: "{{ backup_file }}"
+      register: backup_stat
+      failed_when: not backup_stat.stat.exists
+
+    - name: Stop application service on app-server
+      systemd:
+        name: myapp
+        state: stopped
+      delegate_to: app-server
+      become: yes
+
+    - name: Copy backup to db-server temp
+      copy:
+        src: "{{ backup_file }}"
+        dest: /tmp/restore.sql.gz
+      delegate_to: db-server
+      become: yes
+
+    - name: Drop and recreate database on db-server
+      shell: |
+        PGPASSWORD={{ db_password }} psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'appdb';"
+        PGPASSWORD={{ db_password }} dropdb -U postgres appdb || true
+        PGPASSWORD={{ db_password }} createdb -U postgres appdb
+        PGPASSWORD={{ db_password }} psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE appdb TO appuser;"
+      delegate_to: db-server
+      become: yes
+
+    - name: Restore database on db-server
+      shell: gunzip -c /tmp/restore.sql.gz | PGPASSWORD={{ db_password }} psql -U postgres appdb
+      delegate_to: db-server
+      become: yes
+
+    - name: Cleanup temp file on db-server
+      file:
+        path: /tmp/restore.sql.gz
+        state: absent
+      delegate_to: db-server
+      become: yes
+
+    - name: Start application service on app-server
+      systemd:
+        name: myapp
+        state: started
+      delegate_to: app-server
+      become: yes
+
+    - name: Verify restore
+      shell: PGPASSWORD={{ db_password }} psql -U appuser appdb -c "SELECT count(*) FROM users;"
+      delegate_to: db-server
+      become: yes
+      register: user_count
+
+    - name: Display verification
+      debug:
+        msg: "Restored database has {{ user_count.stdout }} users"

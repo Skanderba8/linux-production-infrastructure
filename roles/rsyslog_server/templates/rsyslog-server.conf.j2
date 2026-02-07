@@ -1,0 +1,16 @@
+# rsyslog server configuration
+# Receives logs from remote hosts
+
+# Enable UDP reception
+module(load="imudp")
+input(type="imudp" port="{{ rsyslog_server_port }}")
+
+# Template for remote log files
+# Logs are stored in: /var/log/remote/<hostname>/<facility>.log
+template(name="RemoteHost" type="string" string="{{ rsyslog_log_dir }}/%HOSTNAME%/%syslogfacility-text%.log")
+
+# Route messages from remote hosts to separate files
+if $fromhost-ip != '127.0.0.1' then {
+    action(type="omfile" dynaFile="RemoteHost")
+    stop
+}

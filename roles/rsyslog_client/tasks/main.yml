@@ -1,0 +1,23 @@
+---
+# tasks file for rsyslog_client
+
+- name: Install rsyslog
+  apt:
+    name: rsyslog
+    state: present
+    update_cache: yes
+
+- name: Configure rsyslog client to forward logs
+  template:
+    src: rsyslog-client.conf.j2
+    dest: /etc/rsyslog.d/00-client.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart rsyslog
+
+- name: Ensure rsyslog is running and enabled
+  systemd:
+    name: rsyslog
+    state: started
+    enabled: yes

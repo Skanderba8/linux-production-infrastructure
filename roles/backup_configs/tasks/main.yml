@@ -18,8 +18,8 @@
   template:
     src: backup-configs.sh.j2
     dest: /usr/local/bin/backup-configs.sh
-    owner: root
-    group: root
+    owner: "{{ backup_user }}"
+    group: "{{ backup_user }}"
     mode: '0750'
   become: yes
 
@@ -31,7 +31,6 @@
     job: "/usr/local/bin/backup-configs.sh"
     user: "{{ backup_user }}"
     state: present
-  become: yes
 
 - name: Display backup information
   debug:
